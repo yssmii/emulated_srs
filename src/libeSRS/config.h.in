@@ -1,0 +1,47 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#cmakedefine HAVE_UNISTD_H 1
+#cmakedefine HAVE_TIME_H 1
+#cmakedefine HAVE_SYS_TIME_H 1
+#cmakedefine HAVE_TERMIOS_H 1
+#cmakedefine HAVE_FCNTL_H 1
+#cmakedefine HAVE_CONIO_H 1
+#cmakedefine HAVE_WINSOCK2_H 1
+#cmakedefine HAVE_X11_KEYSYM_H 1
+#cmakedefine HAVE_CV_H 1
+#cmakedefine HAVE_HIGHGUI_H 1
+#cmakedefine HAVE_OPENCV_CV_H 1
+#cmakedefine HAVE_OPENCV_HIGHGUI_H 1
+#cmakedefine HAVE_OPENNI_H 1
+#cmakedefine HAVE_OPENNI2_OPENNI_H 1
+#cmakedefine HAVE_SYS_SOCKET_H 1
+
+#cmakedefine WITH_OPENNI2 1
+
+#cmakedefine WITH_STRUCTURESENSOR 1
+#cmakedefine WITH_ASTRA 1
+#cmakedefine WITH_XTION2 1
+#cmakedefine WITH_KINECT_OPENNI2 1
+
+#cmakedefine WITH_KINECT_SDK1 1
+
+#cmakedefine WITH_KINECT2 1
+
+#cmakedefine WITH_ZED 1
+
+#cmakedefine WITH_PIXELSOLEIL 1
+
+#cmakedefine WITH_REALSENSE_SR300 1
+#cmakedefine WITH_REALSENSE_R200 1
+
+#cmakedefine WITH_REALSENSE_D435 1
+
+#cmakedefine WITH_YVT35 1
+#cmakedefine WITH_FX10 1
+#cmakedefine WITH_USBCAM 1
+#cmakedefine WITH_USBXI16P 1
+
+#cmakedefine PATH_YOLO_DIR "@YOLO_DIR@"
+
+#endif
