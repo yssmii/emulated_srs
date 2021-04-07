@@ -22,7 +22,7 @@ eSRS::RangeData::getMaps(eSRS::DepthMap &depthmap) const
 {
   int width = this->getWidth();
   int height = this->getHeight();
-  //const int SATULATEDINTENSITY=255;
+  //const int SATURATEDINTENSITY=255;
 
   if(depthmap.width() != width || depthmap.height() != height)
     depthmap.reshape(width, height);     // サイズをRangeDataに合わせて、
@@ -47,12 +47,12 @@ eSRS::RangeData::getMaps(eSRS::DepthMap &depthmap) const
     if(zdata < 0)                          // Zが負なら、TOOFARかNODATA
     {
       if(fabs(zdata - ZVAL_TOOFAR) < FLT_EPSILON)
-        pDepthmap[i] = eSRS::DepthMap::PIXELVALUE_SATULATION;
+        pDepthmap[i] = eSRS::DepthMap::PIXELVALUE_SATURATION;
       else
         pDepthmap[i] = eSRS::DepthMap::PIXELVALUE_NODATA;
     }
     else if(zdata > maxz)                // 最大距離より大きければTOOFAR
-      pDepthmap[i] = eSRS::DepthMap::PIXELVALUE_SATULATION;
+      pDepthmap[i] = eSRS::DepthMap::PIXELVALUE_SATURATION;
     else
       pDepthmap[i] = zdata;
   }

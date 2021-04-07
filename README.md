@@ -1,4 +1,4 @@
-# emulated_srs: A ROS package for obstacle detection emulating a Safety-Related Sensor (SRS)
+# emulated_srs: A ROS package for obstacle detection
 
 ## Description
 
@@ -60,7 +60,7 @@
 3. Build emulated_srs.
 
         cd ~/catkin_ws/src
-        git clone http://pc101175.a02.aist.go.jp/git/drc3-ai.git
+        git clone http://github.com/yssmii/emulated_srs.git
         catkin_init_workspace
         cd ..
         catkin_make                 # add -DWITH_YOLO=OFF, if not installing YOLOv3
