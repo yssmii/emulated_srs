@@ -42,6 +42,6 @@
 #cmakedefine WITH_USBCAM 1
 #cmakedefine WITH_USBXI16P 1
 
-#cmakedefine PATH_YOLO_DIR "@YOLO_DIR@"
+#cmakedefine PATH_YOLO_DIR "@PATH_YOLO_DIR@"
 
 #endif
