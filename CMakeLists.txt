@@ -24,10 +24,11 @@ find_package(catkin REQUIRED
 
 find_package(OpenCV REQUIRED)
 
-set(esrs_LIBDIR ${CMAKE_CURRENT_SOURCE_DIR}/src/libeSRS)
-set(esrs_INCDIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/libeSRS)
+#set(esrs_LIBDIR ${CMAKE_CURRENT_SOURCE_DIR}/src/libeSRS)
+#set(esrs_INCDIRS ${CMAKE_CURRENT_SOURCE_DIR}/include)
 #set(esrs_LIBRARIES ${esrs_LIBDIR}/libsrss.a)
 #set(esrs_LIBRARIES -lsrss)
+set(esrs_INCDIRS)
 set(esrs_LIBRARIES eSRS)
 
 #find_package(OpenCV 2 REQUIRED)
@@ -37,7 +38,7 @@ set(esrs_LIBRARIES eSRS)
 #endif()
 set(CMAKE_REQUIRED_INCLUDES
   ${CMAKE_REQUIRED_INCLUDES} ${OpenCV_INCLUDE_DIRS})
-set(esrs_LIBRARIES ${esrs_LIBRARIES} ${OpenCV_LIBS})
+#set(esrs_LIBRARIES ${esrs_LIBRARIES} ${OpenCV_LIBS})
 message( STATUS "DEBUG: OpenCV Include Dir: " ${OpenCV_INCLUDE_DIRS} )
 
 if(WITH_YOLO)
@@ -57,12 +58,12 @@ if(WITH_YOLO)
   set(YOLO_INCDIR ${PATH_YOLO_DIR}/include)
 
   set(esrs_INCDIRS ${esrs_INCDIRS} ${CUDA_INCLUDE_DIRS} ${YOLO_INCDIR})
-  set(esrs_LIBDIRS ${esrs_LIBDIRS} ${CUDA_LIBRARY_DIR})
+  #set(esrs_LIBDIRS ${esrs_LIBDIRS} ${CUDA_LIBRARY_DIR})
   set(esrs_LIBRARIES ${esrs_LIBRARIES} ${YOLO_LIBS}
     ${CUDA_CUDA_LIBRARY} ${CUDA_CUDART_LIBRARY}  ${CUDNN_LIBS})
 
   message(STATUS "DEBUG: esrs incdir: ${esrs_INCDIRS}")
-  message(STATUS "DEBUG: esrs libdir: ${esrs_LIBDIRS}")
+  #message(STATUS "DEBUG: esrs libdir: ${esrs_LIBDIRS}")
   message(STATUS "DEBUG: esrs libs: ${esrs_LIBRARIES}")
 endif()
 
@@ -83,8 +84,8 @@ generate_messages(
   )
 
 catkin_package(
-  #  INCLUDE_DIRS include
-  #  LIBRARIES cpp
+  INCLUDE_DIRS include
+  LIBRARIES emulated_srs
   CATKIN_DEPENDS
   roscpp
   std_msgs
@@ -97,6 +98,7 @@ catkin_package(
 )
 
 include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
   ${esrs_INCDIRS}
   )
