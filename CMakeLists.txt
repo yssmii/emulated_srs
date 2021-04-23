@@ -2,12 +2,12 @@ cmake_minimum_required(VERSION 2.8.3)
 
 project(emulated_srs)
 
-option(WITH_YOLO "With Yolo v3" ON)
-
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_FLAGS_RELEASE "-Wall -O2 -std=c++11")
    
 set(CMAKE_VERBOSE_MAKEFILE 1)
+
+option(WITH_YOLO "With Yolo v3" ON)
 
 find_package(catkin REQUIRED
   COMPONENTS
@@ -28,8 +28,7 @@ find_package(OpenCV REQUIRED)
 #set(esrs_INCDIRS ${CMAKE_CURRENT_SOURCE_DIR}/include)
 #set(esrs_LIBRARIES ${esrs_LIBDIR}/libsrss.a)
 #set(esrs_LIBRARIES -lsrss)
-set(esrs_INCDIRS)
-set(esrs_LIBRARIES eSRS)
+#set(esrs_INCDIRS)
 
 #find_package(OpenCV 2 REQUIRED)
 #find_package(OpenCV 3 REQUIRED)
@@ -40,6 +39,8 @@ set(CMAKE_REQUIRED_INCLUDES
   ${CMAKE_REQUIRED_INCLUDES} ${OpenCV_INCLUDE_DIRS})
 #set(esrs_LIBRARIES ${esrs_LIBRARIES} ${OpenCV_LIBS})
 message( STATUS "DEBUG: OpenCV Include Dir: " ${OpenCV_INCLUDE_DIRS} )
+
+#set(YOLO_LIBRARIES)
 
 if(WITH_YOLO)
   find_package(CUDA 10 REQUIRED)
@@ -53,18 +54,27 @@ if(WITH_YOLO)
   else()
     set(PATH_YOLO_DIR $ENV{HOME}/src/darknet)
   endif()
-  set(YOLO_LIBS ${PATH_YOLO_DIR}/libdarknet.a -fopenmp)
-  set(CUDNN_LIBS -L${CUDA_LIBRARY_DIR} -lcuda -lcudart -lcublas -lcurand -lcudnn)
-  set(YOLO_INCDIR ${PATH_YOLO_DIR}/include)
 
-  set(esrs_INCDIRS ${esrs_INCDIRS} ${CUDA_INCLUDE_DIRS} ${YOLO_INCDIR})
-  #set(esrs_LIBDIRS ${esrs_LIBDIRS} ${CUDA_LIBRARY_DIR})
-  set(esrs_LIBRARIES ${esrs_LIBRARIES} ${YOLO_LIBS}
-    ${CUDA_CUDA_LIBRARY} ${CUDA_CUDART_LIBRARY}  ${CUDNN_LIBS})
+  set(CUDNN_LIBS
+    -L${CUDA_LIBRARY_DIR} -lcuda -lcudart -lcublas -lcurand -lcudnn)
+  
+  set(YOLO_LIBRARIES
+    ${YOLO_LIBRARIES}
+    ${PATH_YOLO_DIR}/libdarknet.a -fopenmp
+    ${CUDA_CUDA_LIBRARY}
+    ${CUDA_CUDART_LIBRARY}
+    ${CUDNN_LIBS}
+    )
+  
 
-  message(STATUS "DEBUG: esrs incdir: ${esrs_INCDIRS}")
-  #message(STATUS "DEBUG: esrs libdir: ${esrs_LIBDIRS}")
-  message(STATUS "DEBUG: esrs libs: ${esrs_LIBRARIES}")
+  set(CMAKE_REQUIRED_INCLUDES
+    ${CMAKE_REQUIRED_INCLUDES}
+    ${CUDA_INCLUDE_DIRS}
+    ${PATH_YOLO_DIR}/include
+    ${PATH_YOLO_DIR}/src
+    ${PATH_YOLO_DIR}/3rdparty/include
+    )
+
 endif()
 
 #add_service_files(FILES WordCount.srv)
@@ -84,8 +94,8 @@ generate_messages(
   )
 
 catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES emulated_srs
+  #INCLUDE_DIRS include
+  #LIBRARIES eSRS
   CATKIN_DEPENDS
   roscpp
   std_msgs
@@ -97,11 +107,6 @@ catkin_package(
   #  DEPENDS system_lib
 )
 
-include_directories(
-  include
-  ${catkin_INCLUDE_DIRS}
-  ${esrs_INCDIRS}
-  )
 
 add_subdirectory(src)
 # subdirs(src/libsrss)
@@ -129,10 +134,10 @@ add_subdirectory(src)
 #  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 #  )
 
-install(DIRECTORY include/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  PATTERN ".svn" EXCLUDE
-  )
+#install(DIRECTORY include/
+#  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#  PATTERN ".svn" EXCLUDE
+#  )
 
 #install(DIRECTORY include/
 #  DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}

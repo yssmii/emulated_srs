@@ -2,10 +2,10 @@
 
 ## Description
 
-* A ROS package emulating the architecture of Safety-Related Sensors
-  (SRS) according to [IEC/TS
-  62998-1](https://webstore.iec.ch/publication/31009). It aims to
-  provide a software platform for evaluating a variety of
+* A ROS package for obstacle detection emulating the architecture of
+  Safety-Related Sensors (SRS) according to [IEC/TS
+  62998-1](https://webstore.iec.ch/publication/31009).
+* It aims to provide a software platform for evaluating a variety of
   distance-imaging sensor devices with a common mature object
   detection algorithm.
 * It subscribes to [organized PointCloud2
@@ -32,9 +32,9 @@
 * It subscribes to organized PC2 messages and executes the obstacle detection
   and classification, and publishes custom messages containing a list of the
   detected obstacles.
-* If the CMake option "-DWITH_YOLO=OFF" is specified at the installation, the
-  classification function is not implemented. All detected obstacles are
-  classified as "unknown".
+* If the CMake option "-DWITH_YOLO=OFF" is specified, the
+  classification function is not implemented. All detected obstacles
+  are classified as "unknown".
 
 ### obstacle_detector
 
@@ -63,13 +63,13 @@
         git clone http://github.com/yssmii/emulated_srs.git
         catkin_init_workspace
         cd ..
-        catkin_make                 # add -DWITH_YOLO=OFF, if not installing YOLOv3
+        catkin_make                 # add -DWITH_YOLO=OFF, without YOLOv3
 
 4. Update the mask image, if necessary.
 
         cd ~/catkin_make/devel/lib/emulated_srs
         rm MASK.png
-        ./makeMask 320 0 320 480     # if mask the right half of VGA images
+        ./makeMask 320 0 320 480    # if mask the right half of VGA images
 
 ## Usage
 

@@ -4,7 +4,12 @@ add_definitions(-DHAVE_CONFIG_H)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
   ${CMAKE_CURRENT_SOURCE_DIR}/config.h)
 
-message(STATUS "DEBUG: SRSS INCDIRS: ${esrs_INCDIRS}")
+#message(STATUS "DEBUG: SRSS INCDIRS: ${esrs_INCDIRS}")
+
+include_directories(
+  lib/include
+  ${catkin_INCLUDE_DIRS}
+  )
 
 add_executable(obstacle_detector
   intensity_map.cpp
@@ -30,15 +35,17 @@ add_dependencies(obstacle_classifier
 #message(STATUS "DEBUG: esrs LIBRARIES: ${esrs_LIBRARIES}")
 
 target_link_libraries(obstacle_detector
+  eSRS
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
-  ${esrs_LIBRARIES}
+  ${YOLO_LIBRARIES}
   )
 
 target_link_libraries(obstacle_classifier
+  eSRS
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
-  ${esrs_LIBRARIES}
+  ${YOLO_LIBRARIES}
   )
 
 add_custom_target(maskfile)
@@ -56,7 +63,7 @@ if(WITH_YOLO)
     )
 endif(WITH_YOLO)
   
-add_subdirectory(libeSRS)
+add_subdirectory(lib)
 add_subdirectory(util)
 #add_subdirectory(share)
 
