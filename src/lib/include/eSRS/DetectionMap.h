@@ -302,6 +302,16 @@ public:
                                 const double maxdepth) const;
 
   /*!
+   *  @brief  DepthMapと検出結果のコピー
+   *  @param  [out] bbox  コピー先
+   *  @note
+   *    - DepthMapを bboxにコピーし、検出結果を描画する
+   *  @attention  N/A
+   */
+  void normalizeWithObstacleRegion(ImageData<unsigned char> &bbox,
+    const double maxdepth) const;
+
+  /*!
    *  @brief  検出結果描画
    *  @param  [out] bbox  検出結果を描画する画像
    *  @retval UFV::OK  正常終了
@@ -330,6 +340,11 @@ public:
   virtual int drawBoundingBox(ImageData<unsigned char> &bbox,
                               const UFV::Point2Di &offset) const;
 
+
+  /*!
+  */
+  virtual int drawObstacleRegion(UFV::ImageData<unsigned char> &bbox) const;
+  virtual int drawObstacleRegionWithLabel(UFV::ImageData<unsigned char> &bbox) const;
 
   /*!
   */
