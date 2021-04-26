@@ -29,35 +29,30 @@ using namespace UFV;
 const double UFV::RangeData::DEFAULT_MAXDEPTH = 10000.0; // mm
 
 RangeData::RangeData(const int width, const int height, const int maxdepth)
-    : 
-      m_width(width),
+    : m_width(width),
       m_height(height),
-      m_depthmap(NULL),
-      m_maxdepth(maxdepth)
+      m_maxdepth(maxdepth),
+      m_depthmap(NULL)
 {
   m_data = new double[m_width*m_height*3];
 }
 
 RangeData::RangeData(std::istream &is, const int maxdepth)
-  throw(BadDataException)
-    : 
-      m_width(0),
+    : m_width(0),
       m_height(0),
       m_data(NULL),
-      m_depthmap(NULL),
-      m_maxdepth(maxdepth)
+      m_maxdepth(maxdepth),
+      m_depthmap(NULL)
 {
   this->_load(is);
 }
 
 RangeData::RangeData(const char *fpath, const int maxdepth)
-    throw(IOError,BadDataException)
-    : 
-      m_width(0),
+    : m_width(0),
       m_height(0),
       m_data(NULL),
-      m_depthmap(NULL),
-      m_maxdepth(maxdepth)
+      m_maxdepth(maxdepth),
+      m_depthmap(NULL)
 {
   std::ifstream ifs(fpath);
   if(ifs)
@@ -164,7 +159,6 @@ RangeData::setData(const float *xdata, const float *ydata, const float *zdata)
 
 void
 RangeData::copyData(double *data) const
-  throw(BadDataException)
 {
   memcpy(data, m_data, m_width*m_height*3*sizeof(double));
   return;
@@ -173,7 +167,6 @@ RangeData::copyData(double *data) const
 
 void
 RangeData::updateDepthMap(const double maxz)
-  throw(BadDataException)
 {
   if(m_depthmap == NULL)
     m_depthmap = new unsigned char[m_width*m_height];
@@ -306,7 +299,6 @@ RangeData::_load(std::istream &is)
   bool flag_width=false;         /* 必須情報     */
   bool flag_height=false;         /* 必須情報     */
   bool flag_data=false;         /* 必須情報     */
-  bool have_separator=false;
   int ret = UFV::OK;
 
   std::string buf;
@@ -322,7 +314,6 @@ RangeData::_load(std::istream &is)
 
     if(is_separator_line(buf))
     {
-      have_separator = true;
       break;
     }
   }

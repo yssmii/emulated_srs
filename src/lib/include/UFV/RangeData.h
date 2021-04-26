@@ -47,10 +47,8 @@ public:
   };
 
 public:
-  RangeData(const char *path, const int maxdepth=DEFAULT_MAXDEPTH)
-    throw(IOError, BadDataException);
-  RangeData(std::istream &is, const int maxdepth=DEFAULT_MAXDEPTH)
-    throw(BadDataException);
+  RangeData(const char *path, const int maxdepth=DEFAULT_MAXDEPTH);
+  RangeData(std::istream &is, const int maxdepth=DEFAULT_MAXDEPTH);
   RangeData(const int width, const int height,
             const int maxdepth=DEFAULT_MAXDEPTH);
   
@@ -87,7 +85,7 @@ public:
   double *data(void) const { return this->getData(); };
   
   //! データをコピー。引数には必要なサイズの領域が確保されていること
-  void copyData(double *data) const throw(BadDataException);
+  void copyData(double *data) const;
 
 public:
   /**
@@ -102,7 +100,7 @@ public:
    * 
    * @param maxz            threshold for maximum depth value (Z)
    */
-  void updateDepthMap(const double maxz) throw(BadDataException);
+  void updateDepthMap(const double maxz);
   unsigned char* getDepthMap(void) const { return m_depthmap; };
 
 private:
