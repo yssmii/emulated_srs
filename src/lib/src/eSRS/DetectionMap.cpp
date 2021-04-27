@@ -1635,7 +1635,8 @@ eSRS::DetectionMap::display(const std::string wlabel, const int msec,
   UFV::ImageData<unsigned char> showimg;
 
   //! ImageDataインスタンスに DepthMapと検出結果をコピーする
-  this->normalizeWithBoundingBox(showimg, maxdepth);
+  //this->normalizeWithBoundingBox(showimg, maxdepth);
+  this->normalizeWithObstacleRegion(showimg, maxdepth);
 
   //! ImageDataインスタンスを元に、画像表示用の Matインスタンスを生成する
   cv::Mat simg(cv::Size(this->width(), this->height()), CV_8UC3, 
@@ -1682,7 +1683,8 @@ eSRS::DetectionMap::display(const std::string wlabel, const int msec,
   UFV::ImageData<unsigned char> showimg;
 
   //! ImageDataインスタンスに DepthMapと検出結果をコピーする
-  this->normalizeWithBoundingBox(showimg, maxdepth);
+  //this->normalizeWithBoundingBox(showimg, maxdepth);
+  this->normalizeWithObstacleRegion(showimg, maxdepth);
 
   //! ImageDataインスタンスを元に、画像表示用の Matインスタンスを生成する
   cv::Mat simg(cv::Size(this->width(), this->height()), CV_8UC3, 
@@ -1720,7 +1722,8 @@ eSRS::DetectionMap::writeImage(const std::string name,
   UFV::ImageData<unsigned char> showimg;
 
   //! ImageDataインスタンスに DepthMapと検出結果をコピーする
-  this->normalizeWithBoundingBox(showimg, maxdepth);
+  //this->normalizeWithBoundingBox(showimg, maxdepth);
+  this->normalizeWithObstacleRegion(showimg, maxdepth);
 
   //! ImageDataインスタンスを元に、画像ファイル書き込み用の Matインスタンスを生成する
   cv::Mat simg(cv::Size(this->width(), this->height()), CV_8UC3, 
@@ -1756,7 +1759,8 @@ eSRS::DetectionMap::writeImage(const UFV::Rect &rect, const double mag,
   UFV::ImageData<unsigned char> showimg;
 
   //! ImageDataインスタンスに DepthMapと検出結果をコピーする
-  this->normalizeWithBoundingBox(showimg, maxdepth);
+  //this->normalizeWithBoundingBox(showimg, maxdepth);
+  this->normalizeWithObstacleRegion(showimg, maxdepth);
 
   //! ImageDataインスタンスを元に、画像ファイル書き込み用の Matインスタンスを生成する
   cv::Mat simg(cv::Size(this->width(), this->height()), CV_8UC3, 
