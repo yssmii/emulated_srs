@@ -35,9 +35,10 @@ find_package(OpenCV REQUIRED)
 #if(NOT OpenCV_FOUND)
 #  message(FATAL_ERROR "\n\n OpenCV 2 is missing\n\n")
 #endif()
-set(CMAKE_REQUIRED_INCLUDES
-  ${CMAKE_REQUIRED_INCLUDES} ${OpenCV_INCLUDE_DIRS})
+#set(CMAKE_REQUIRED_INCLUDES
+#  ${CMAKE_REQUIRED_INCLUDES} ${OpenCV_INCLUDE_DIRS})
 #set(esrs_LIBRARIES ${esrs_LIBRARIES} ${OpenCV_LIBS})
+include_directories(${OpenCV_INCLUDE_DIRS})
 message( STATUS "DEBUG: OpenCV Include Dir: " ${OpenCV_INCLUDE_DIRS} )
 
 #set(YOLO_LIBRARIES)
@@ -65,10 +66,8 @@ if(WITH_YOLO)
     ${CUDA_CUDART_LIBRARY}
     ${CUDNN_LIBS}
     )
-  
 
-  set(CMAKE_REQUIRED_INCLUDES
-    ${CMAKE_REQUIRED_INCLUDES}
+  include_directories(
     ${CUDA_INCLUDE_DIRS}
     ${PATH_YOLO_DIR}/include
     ${PATH_YOLO_DIR}/src
