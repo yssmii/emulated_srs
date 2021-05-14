@@ -86,7 +86,7 @@ UFV::kbhit(void)
 
 #ifdef HAVE_USLEEP
 int
-UFV::usleep(unsigned int usec) 
+UFV::usleep(const unsigned int usec) 
 { 
   return ::usleep(usec); 
 }
@@ -94,13 +94,13 @@ UFV::usleep(unsigned int usec)
 # ifdef HAVE_COIL_TIME_H
 #  include <coil/Time.h>
 int
-UFV::usleep(unsigned int usec) 
+UFV::usleep(const unsigned int usec) 
 { 
   return coil::usleep(usec); 
 }
 # else //  HAVE_COIL_TIME_H
 int
-UFV::usleep(unsigned int usec)
+UFV::usleep(const unsigned int usec)
 {
 #  ifdef _WIN32
   Sleep(usec / 1000);
@@ -163,8 +163,32 @@ UFV::getTime(void)
   return ufvtime;
 }
 
+UFV::Time
+UFV::getTime(const UFV::LocalTime &ltm)
+{
+  UFV::Time ufvtime;
+
+  struct tm st;
+  
+  st.tm_year = ltm.year;
+  st.tm_mon = ltm.month - 1;
+  st.tm_mday = ltm.mday;
+  st.tm_hour = ltm.hour;
+  st.tm_min = ltm.minute;
+  st.tm_sec = ltm.second;
+  //st.tm_usec = syst.wMilliseconds * 1000;
+  st.tm_isdst = -1;
+  st.tm_wday = 0;
+  st.tm_yday = 0;
+  
+  ufvtime.sec = mktime(&st);
+  ufvtime.usec = ltm.millisecond * 1000;
+
+  return ufvtime;
+}
+
 double
-UFV::calcLaptime(UFV::Time &fromtime, UFV::Time &totime)
+UFV::calcLaptime(const UFV::Time &fromtime, const UFV::Time &totime)
 {
   double from_msec = fromtime.sec * 1000.0 + fromtime.usec / 1000.0;
   double to_msec = totime.sec * 1000.0 + totime.usec / 1000.0;
@@ -213,14 +237,16 @@ UFV::LapTimer::get(void)
 }
 
 std::string
-UFV::getLocalTimeString(UFV::LocalTime &ltm)
+UFV::getLocalTimeString(const UFV::LocalTime &ltm)
 {
   std::stringstream str_stream;
   str_stream << std::setw(2) << std::setfill('0') << ltm.year
              << std::setw(2) << std::setfill('0') << ltm.month
              << std::setw(2) << std::setfill('0') << ltm.mday
+             << std::setw(1) << "_"
              << std::setw(2) << std::setfill('0') << ltm.hour
              << std::setw(2) << std::setfill('0') << ltm.minute
+             << std::setw(1) << "_"
              << std::setw(2) << std::setfill('0') << ltm.second
              << std::setw(3) << std::setfill('0') << ltm.millisecond;
   return str_stream.str();
@@ -270,7 +296,7 @@ UFV::getLocalTime(void)
 }
 
 UFV::LocalTime
-UFV::getLocalTime(UFV::Time &tm)
+UFV::getLocalTime(const UFV::Time &tm)
 {
   UFV::LocalTime ltm;
 
@@ -293,7 +319,7 @@ UFV::getLocalTime(UFV::Time &tm)
  * Random number generator.
  */
 int
-UFV::getRandomNumber(int rmin, int rmax)
+UFV::getRandomNumber(const int rmin, const int rmax)
 {
   return rmin + (int) ((rmax - rmin + 1.0) * rand() / (RAND_MAX + 1.0));
 }

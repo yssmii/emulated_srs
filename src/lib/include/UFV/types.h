@@ -153,7 +153,7 @@ struct LocalTime
 {
   LocalTime(void) : year(0), month(0), mday(0), hour(0), minute(0), second(0), millisecond(0) {};
   int year;
-  int month;
+  int month; // 1 - 12
   int mday;
   int hour;
   int minute;

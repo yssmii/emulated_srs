@@ -28,19 +28,22 @@ int
 kbhit(void);
 
 int
-usleep(unsigned int usec);
+usleep(const unsigned int usec);
 
 LocalTime
 getLocalTime(void);
 
 LocalTime
-getLocalTime(Time &tm);
+getLocalTime(const Time &tm);
 
 Time
 getTime(void);
 
+Time
+getTime(const LocalTime &ltm);
+
 double
-calcLaptime(Time &from, Time &to);   // returns milliseconds.
+calcLaptime(const Time &from, const Time &to);   // returns milliseconds.
 
 class LapTimer
 {
@@ -63,14 +66,14 @@ std::string
 getLocalTimeString(void);
 
 std::string
-getLocalTimeString(LocalTime &lm);
+getLocalTimeString(const LocalTime &lm);
 
 
 /**
  * Random number generator.
  */
 int
-getRandomNumber(int rmin, int rmax);
+getRandomNumber(const int rmin, const int rmax);
 
 /**
  * Convert radian to degree.

@@ -253,6 +253,15 @@ public:
 public:
 
   /*!
+   *  @brief  ラベリング画像を返す
+   */
+  virtual UFV::ImageData<short> getLabeledImageData(void) const {
+    return(m_labeled);
+  }
+  
+public:
+
+  /*!
    *  @brief  画像ファイル書き込み
    *  @param  [in] name  ファイル名＋拡張子
    *  @note
