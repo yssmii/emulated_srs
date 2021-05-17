@@ -182,7 +182,7 @@ UFV::getTime(const UFV::LocalTime &ltm)
   st.tm_yday = 0;
   
   ufvtime.sec = mktime(&st);
-  ufvtime.usec = ltm.millisecond * 1000;
+  ufvtime.usec = ltm.millisecond * 1000 + ltm.microsecond;
 
   return ufvtime;
 }
@@ -246,9 +246,10 @@ UFV::getLocalTimeString(const UFV::LocalTime &ltm)
              << std::setw(1) << "_"
              << std::setw(2) << std::setfill('0') << ltm.hour
              << std::setw(2) << std::setfill('0') << ltm.minute
-             << std::setw(1) << "_"
              << std::setw(2) << std::setfill('0') << ltm.second
-             << std::setw(3) << std::setfill('0') << ltm.millisecond;
+             << std::setw(1) << "_"
+             << std::setw(3) << std::setfill('0') << ltm.millisecond
+             << std::setw(3) << std::setfill('0') << ltm.microsecond;
   return str_stream.str();
 }
 
@@ -276,6 +277,7 @@ UFV::getLocalTime(void)
   t.minute = st.wMinute;
   t.second = st.wSecond;
   t.millisecond = st.wMilliseconds;
+  t.microsecond = 0;
 #else
   struct timeval a;
   struct tm st;
@@ -290,6 +292,7 @@ UFV::getLocalTime(void)
   t.minute = st.tm_min;
   t.second = st.tm_sec;
   t.millisecond = a.tv_usec / 1000;
+  t.microsecond = a.tv_usec % 1000;
 #endif
 
   return t;
@@ -311,6 +314,7 @@ UFV::getLocalTime(const UFV::Time &tm)
   ltm.minute = st->tm_min;
   ltm.second = st->tm_sec;
   ltm.millisecond = tm.usec / 1000;
+  ltm.microsecond = tm.usec % 1000;
   
   return ltm;
 }

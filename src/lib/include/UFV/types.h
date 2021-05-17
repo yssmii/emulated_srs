@@ -151,7 +151,15 @@ struct Time
 
 struct LocalTime
 {
-  LocalTime(void) : year(0), month(0), mday(0), hour(0), minute(0), second(0), millisecond(0) {};
+  LocalTime(void) :
+      year(0),
+      month(0),
+      mday(0),
+      hour(0),
+      minute(0),
+      second(0),
+      millisecond(0),
+      microsecond(0) {};
   int year;
   int month; // 1 - 12
   int mday;
@@ -159,6 +167,7 @@ struct LocalTime
   int minute;
   int second;
   int millisecond;
+  int microsecond;
 };
 
 }
