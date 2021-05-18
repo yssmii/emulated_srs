@@ -435,7 +435,10 @@ ImageData<T>::display(const std::string wlabel, const int msec,
     if(kret == XK_q)
       return UFV::END_OF_FILE;
     else if(kret == XK_space)
-      cv::waitKey(0);
+    {
+      kret = cv::waitKey(0);
+      if(kret == XK_q) return UFV::END_OF_FILE;
+    }
   }
 
   return UFV::OK;
@@ -473,7 +476,10 @@ ImageData<T>::display(const std::string wlabel, const int msec,
     if(kret == XK_q)
       return UFV::END_OF_FILE;
     else if(kret == XK_space)
-      cv::waitKey(0);
+    {
+      kret = cv::waitKey(0);
+      if(kret == XK_q) return UFV::END_OF_FILE;
+    }
   }
 
   return UFV::OK;
@@ -495,7 +501,10 @@ UFV::ImageData<T>::displayRaw(const std::string wlabel,
     if(kret == XK_q)
       return UFV::END_OF_FILE;
     else if(kret == XK_space)
-      cv::waitKey(0);
+    {
+      kret = cv::waitKey(0);
+      if(kret == XK_q) return UFV::END_OF_FILE;
+    }
   }
 
   return UFV::OK;

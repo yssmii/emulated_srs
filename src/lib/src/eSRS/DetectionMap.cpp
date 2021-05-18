@@ -1668,7 +1668,10 @@ eSRS::DetectionMap::display(const std::string wlabel, const int msec,
 
     //! - SPACEのキー入力を検出した場合、次のキー入力を待ち続ける
     else if(rkey == XK_space)
-      cv::waitKey(0);
+    {
+      rkey = cv::waitKey(0);
+      if(rkey == XK_q) return UFV::END_OF_FILE;
+    }
   }
 
   return UFV::OK;
@@ -1704,7 +1707,10 @@ eSRS::DetectionMap::display(const std::string wlabel, const int msec,
     
     //! - SPACEのキー入力を検出した場合、次のキー入力を待ち続ける
     else if(rkey == XK_space)
-      cv::waitKey(0);
+    {
+      rkey = cv::waitKey(0);
+      if(rkey == XK_q) return UFV::END_OF_FILE;
+    }
   }
 
   return UFV::OK;
