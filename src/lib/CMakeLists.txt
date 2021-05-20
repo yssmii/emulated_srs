@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 2.8)
 # config.h
 add_definitions(-DHAVE_CONFIG_H)
 include(CheckIncludeFileCXX)
+include(CheckFunctionExists)
 
 message(STATUS "CMAKE_REQUIRED_INCLUDES: ${CMAKE_REQUIRED_INCLUDES}")
 message(STATUS "OpenCV_LIB_DIR: ${OpenCV_LIB_DIR}")
@@ -26,6 +27,9 @@ check_include_file_cxx(pthread.h HAVE_PTHREAD_H)
 #check_include_file_cxx("opencv/highgui.h" HAVE_OPENCV_HIGHGUI_H)
 check_include_file_cxx(OpenNI.h HAVE_OPENNI_H)
 check_include_file_cxx("openni2/OpenNI.h" HAVE_OPENNI2_OPENNI_H)
+check_include_file_cxx("coil/Time.h" HAVE_COIL_TIME_H)
+
+check_function_exists(usleep HAVE_USLEEP)
 
 if(HAVE_UNISTD_H)
   message(STATUS "FOUND: unistd.h") # test
