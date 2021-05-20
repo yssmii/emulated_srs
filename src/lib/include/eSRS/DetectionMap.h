@@ -231,8 +231,9 @@ public:
    *    - 画像を表示する
    *  @attention  N/A
    */
-  virtual int display(const std::string wlabel, const int msec,
-                      const double maxdepth=-1.0) const;
+  virtual UFV::KeyDef display(const std::string wlabel,
+                              const int msec,
+                              const double maxdepth=-1.0) const;
   
   /*!
    *  @brief  画像表示(表示範囲指定)
@@ -245,10 +246,11 @@ public:
    *    - 画像を表示する
    *  @attention  N/A
    */
-  virtual int display(const std::string wlabel, const int msec,
-                      const UFV::Rect &rect,
-                      const double mag,
-                      const double maxdepth=-1.0) const;
+  virtual UFV::KeyDef display(const std::string wlabel,
+                              const int msec,
+                              const UFV::Rect &rect,
+                              const double mag,
+                              const double maxdepth=-1.0) const;
 
 public:
 

@@ -28,9 +28,17 @@ enum
   NG = 1,
   ERR = 2,
 //  ERROR = 2,
-  END_OF_FILE = -1,
-  QUIT = 3
+  END_OF_FILE = -1
 };
+
+typedef enum {
+  KEY_OK = 0,
+  KEY_NG = 1,
+  KEY_ERR = 2,
+  KEY_QUIT = -1,
+  KEY_PAUSE = -2,
+  KEY_SAVE = -3
+} KeyDef;
 
 typedef enum {
   DEVICE_KINECT_OPENNI2,   //! Kinect + OpenNI2

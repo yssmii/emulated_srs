@@ -1625,8 +1625,9 @@ const
 }
 
 // 画像表示(表示範囲指定)
-int
-eSRS::DetectionMap::display(const std::string wlabel, const int msec,
+UFV::KeyDef
+eSRS::DetectionMap::display(const std::string wlabel, 
+                            const int msec,
                             const UFV::Rect &rect,
                             const double mag,
                             const double maxdepth) const
@@ -1664,21 +1665,24 @@ eSRS::DetectionMap::display(const std::string wlabel, const int msec,
 
     //! - 'q'のキー入力を検出した場合、END_OF_FILEで復帰する
     if(rkey == XK_q)
-    return UFV::END_OF_FILE;
+    return UFV::KEY_QUIT;
 
     //! - SPACEのキー入力を検出した場合、次のキー入力を待ち続ける
     else if(rkey == XK_space)
     {
       rkey = cv::waitKey(0);
-      if(rkey == XK_q) return UFV::END_OF_FILE;
+      if (rkey == XK_q)
+        return UFV::KEY_QUIT;
+      else if (rkey == XK_s)
+        return UFV::KEY_SAVE;
     }
   }
 
-  return UFV::OK;
+  return UFV::KEY_OK;
 }
 
 // 画像表示
-int
+UFV::KeyDef
 eSRS::DetectionMap::display(const std::string wlabel, const int msec,
                             const double maxdepth) const
 {
@@ -1703,17 +1707,20 @@ eSRS::DetectionMap::display(const std::string wlabel, const int msec,
 
     //! - 'q'のキー入力を検出した場合、END_OF_FILEで復帰する
     if(rkey == XK_q)
-      return UFV::END_OF_FILE;
+      return UFV::KEY_QUIT;
     
     //! - SPACEのキー入力を検出した場合、次のキー入力を待ち続ける
     else if(rkey == XK_space)
     {
       rkey = cv::waitKey(0);
-      if(rkey == XK_q) return UFV::END_OF_FILE;
+      if (rkey == XK_q)
+        return UFV::KEY_QUIT;
+      else if (rkey == XK_s)
+        return UFV::KEY_SAVE;
     }
   }
 
-  return UFV::OK;
+  return UFV::KEY_OK;
 }
 
 // 画像ファイル書き込み

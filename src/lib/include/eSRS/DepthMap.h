@@ -70,8 +70,9 @@ public:
 public:
   virtual int normalize(UFV::ImageData<unsigned char> &img,
                         double maxdepth=-1.0) const;
-  virtual int display(const std::string wlabel, const int msec,
-                        double maxdepth=-1.0) const;
+  virtual UFV::KeyDef display(const std::string wlabel,
+                              const int msec,
+                              double maxdepth=-1.0) const;
 
   virtual int recoverDepth(const UFV::ImageData<unsigned char> &img);
 
