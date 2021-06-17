@@ -170,7 +170,7 @@ UFV::getTime(const UFV::LocalTime &ltm)
 
   struct tm st;
   
-  st.tm_year = ltm.year;
+  st.tm_year = ltm.year - 1900;
   st.tm_mon = ltm.month - 1;
   st.tm_mday = ltm.mday;
   st.tm_hour = ltm.hour;
