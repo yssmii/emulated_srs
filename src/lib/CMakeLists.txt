@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 2.8)
 # config.h
 add_definitions(-DHAVE_CONFIG_H)
 include(CheckIncludeFileCXX)
+include(CheckFunctionExists)
 
 message(STATUS "CMAKE_REQUIRED_INCLUDES: ${CMAKE_REQUIRED_INCLUDES}")
 message(STATUS "OpenCV_LIB_DIR: ${OpenCV_LIB_DIR}")
@@ -26,6 +27,9 @@ check_include_file_cxx(pthread.h HAVE_PTHREAD_H)
 #check_include_file_cxx("opencv/highgui.h" HAVE_OPENCV_HIGHGUI_H)
 check_include_file_cxx(OpenNI.h HAVE_OPENNI_H)
 check_include_file_cxx("openni2/OpenNI.h" HAVE_OPENNI2_OPENNI_H)
+check_include_file_cxx("coil/Time.h" HAVE_COIL_TIME_H)
+
+check_function_exists(usleep HAVE_USLEEP)
 
 if(HAVE_UNISTD_H)
   message(STATUS "FOUND: unistd.h") # test
@@ -35,7 +39,10 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
   ${CMAKE_CURRENT_SOURCE_DIR}/config.h)
 
 # include dirs
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(
+  include
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  )
 
 # library
 set(SERIAL "2.0.0")
@@ -45,23 +52,44 @@ set(SOSERIAL "2")
 #FILE(GLOB ESRS_SRCS *.cpp UFV/*.cpp)
 
 set(ESRS_SRCS
-  eSRS/DepthMap.cpp
-  eSRS/DetectionMap.cpp
-  eSRS/RangeData.cpp
-  eSRS/ClassificationMap.cpp
-  UFV/utils.cpp
-  UFV/CameraParam.cpp
-  UFV/ImageData.cpp
-  UFV/IntensityMap.cpp
-  UFV/RangeData.cpp)
+  src/eSRS/DepthMap.cpp
+  src/eSRS/DetectionMap.cpp
+  src/eSRS/RangeData.cpp
+  src/eSRS/ClassificationMap.cpp
+  src/UFV/utils.cpp
+  src/UFV/CameraParam.cpp
+  src/UFV/ImageData.cpp
+  src/UFV/IntensityMap.cpp
+  src/UFV/RangeData.cpp
+  )
+
 if(WITH_YOLO)
-  include_directories(${PATH_YOLO_DIR}/include ${PATH_YOLO_DIR}/src
-    ${PATH_YOLO_DIR}/3rdparty/include)
-  set(ESRS_SRCS ${ESRS_SRCS} eSRS/YoloMap.cpp)
+  #include_directories(${PATH_YOLO_DIR}/include ${PATH_YOLO_DIR}/src
+  #    ${PATH_YOLO_DIR}/3rdparty/include)
+  set(ESRS_SRCS
+    ${ESRS_SRCS}
+    src/eSRS/YoloMap.cpp
+    )
 endif(WITH_YOLO)
 
 add_library(eSRS ${LIB_TYPE} ${ESRS_SRCS})
 
-target_link_libraries(eSRS ${OpenCV_LIBS})
+target_link_libraries(eSRS ${OpenCV_LIBS} ${YOLO_LIBS})
 
 set_target_properties(eSRS PROPERTIES VERSION ${SERIAL} SOVERSION ${SOSERIAL})
+
+#install(TARGETS eSRS
+#  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)
+install(TARGETS eSRS
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+  LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+  RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+)
+
+install(DIRECTORY include/
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/include
+  PATTERN ".svn" EXCLUDE
+  )

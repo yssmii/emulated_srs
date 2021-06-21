@@ -27,12 +27,10 @@ namespace eSRS
 class RangeData : public UFV::RangeData
 {
 public:
-  RangeData(const char *path, const int maxdepth)
-      throw(IOError, BadDataException) :
+  RangeData(const char *path, const int maxdepth) :
       UFV::RangeData(path, maxdepth) {};
 
-  RangeData(std::istream &is, const int maxdepth)
-      throw(BadDataException) :
+  RangeData(std::istream &is, const int maxdepth) :
       UFV::RangeData(is, maxdepth) {};
 
   RangeData(const int width, const int height, const int maxdepth) :

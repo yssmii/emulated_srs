@@ -28,9 +28,17 @@ enum
   NG = 1,
   ERR = 2,
 //  ERROR = 2,
-  END_OF_FILE = -1,
-  QUIT = 3
+  END_OF_FILE = -1
 };
+
+typedef enum {
+  KEY_OK = 0,
+  KEY_NG = 1,
+  KEY_ERR = 2,
+  KEY_QUIT = -1,
+  KEY_PAUSE = -2,
+  KEY_SAVE = -3
+} KeyDef;
 
 typedef enum {
   DEVICE_KINECT_OPENNI2,   //! Kinect + OpenNI2
@@ -151,14 +159,23 @@ struct Time
 
 struct LocalTime
 {
-  LocalTime(void) : year(0), month(0), mday(0), hour(0), minute(0), second(0), millisecond(0) {};
+  LocalTime(void) :
+      year(0),
+      month(0),
+      mday(0),
+      hour(0),
+      minute(0),
+      second(0),
+      millisecond(0),
+      microsecond(0) {};
   int year;
-  int month;
+  int month; // 1 - 12
   int mday;
   int hour;
   int minute;
   int second;
   int millisecond;
+  int microsecond;
 };
 
 }

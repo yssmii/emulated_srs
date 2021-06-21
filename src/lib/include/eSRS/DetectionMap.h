@@ -231,8 +231,9 @@ public:
    *    - 画像を表示する
    *  @attention  N/A
    */
-  virtual int display(const std::string wlabel, const int msec,
-                      const double maxdepth=-1.0) const;
+  virtual UFV::KeyDef display(const std::string wlabel,
+                              const int msec,
+                              const double maxdepth=-1.0) const;
   
   /*!
    *  @brief  画像表示(表示範囲指定)
@@ -245,11 +246,21 @@ public:
    *    - 画像を表示する
    *  @attention  N/A
    */
-  virtual int display(const std::string wlabel, const int msec,
-                      const UFV::Rect &rect,
-                      const double mag,
-                      const double maxdepth=-1.0) const;
+  virtual UFV::KeyDef display(const std::string wlabel,
+                              const int msec,
+                              const UFV::Rect &rect,
+                              const double mag,
+                              const double maxdepth=-1.0) const;
 
+public:
+
+  /*!
+   *  @brief  ラベリング画像を返す
+   */
+  virtual UFV::ImageData<short> getLabeledImageData(void) const {
+    return(m_labeled);
+  }
+  
 public:
 
   /*!
@@ -302,6 +313,16 @@ public:
                                 const double maxdepth) const;
 
   /*!
+   *  @brief  DepthMapと検出結果のコピー
+   *  @param  [out] bbox  コピー先
+   *  @note
+   *    - DepthMapを bboxにコピーし、検出結果を描画する
+   *  @attention  N/A
+   */
+  void normalizeWithObstacleRegion(ImageData<unsigned char> &bbox,
+    const double maxdepth) const;
+
+  /*!
    *  @brief  検出結果描画
    *  @param  [out] bbox  検出結果を描画する画像
    *  @retval UFV::OK  正常終了
@@ -330,6 +351,11 @@ public:
   virtual int drawBoundingBox(ImageData<unsigned char> &bbox,
                               const UFV::Point2Di &offset) const;
 
+
+  /*!
+  */
+  virtual int drawObstacleRegion(UFV::ImageData<unsigned char> &bbox) const;
+  virtual int drawObstacleRegionWithLabel(UFV::ImageData<unsigned char> &bbox) const;
 
   /*!
   */

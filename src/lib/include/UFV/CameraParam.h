@@ -36,10 +36,8 @@ public:
 
 public:
   CameraParam(void);
-  CameraParam(const char *path, const int nth_yamldoc=0) 
-    throw(IOError, BadParamException);
-  CameraParam(std::istream &is, const int nth_yamldoc=0)
-    throw(BadParamException);
+  CameraParam(const char *path, const int nth_yamldoc=0);
+  CameraParam(std::istream &is, const int nth_yamldoc=0);
   CameraParam(const int width, 
               const int height, 
               const double intrinsic_matrix[9],

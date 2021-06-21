@@ -1260,6 +1260,28 @@ eSRS::DetectionMap::normalizeWithBoundingBox(UFV::ImageData<unsigned char> &bbox
   return;
 }
 
+// DepthMapと検出結果のコピー
+void
+eSRS::DetectionMap::normalizeWithObstacleRegion(UFV::ImageData<unsigned char> &bbox,
+  const double maxdepth)
+  const
+{
+  //! コピー先とコピー元(Depth Map)の width、height、チェンネル数のいずれかが異なる場合、
+  //! コピー先をコピー元(Depth Map)のサイズで reshapeする
+  if (bbox.width() != this->width() || bbox.height() != this->height() ||
+    bbox.nchannels() != 3)
+  {
+    bbox.reshape(this->width(), this->height(), 3);
+  }
+
+  //! Depth Mapを bboxにコピーする
+  this->normalize(bbox, maxdepth);
+
+  this->drawObstacleRegionWithLabel(bbox);
+
+  return;
+}
+
 static void
 get_xyz_label(const eSRS::BoundingVolume vol,
               const double fscale,
@@ -1393,9 +1415,219 @@ eSRS::DetectionMap::drawBoundingBox(UFV::ImageData<unsigned char> &bbox,
   return UFV::OK;
 }
 
-// 画像表示(表示範囲指定)
+
+static void
+get_reg_label(const eSRS::BoundingVolume vol,
+  const double fscale1, // classname
+  const double fscale2, // xyz
+  const int face,
+  const int thickness,
+  const int lwidth,
+  const cv::Point c1,
+  const std::string oclassstr,
+  std::string &labelstr,
+  cv::Point &rectp1, cv::Point &rectp2,
+  cv::Point &textp_cls, cv::Point &textp_xyz)
+{
+  //label = std::to_string((int)std::round(vol.z));
+  labelstr = std::to_string((int)std::round(vol.z)) + ","
+    + std::to_string((int)std::round(vol.width)) + "x"
+    + std::to_string((int)std::round(vol.height));
+
+  //std::cout << ">>> " << label << std::endl;
+
+  int baseline1 = 0;
+  int baseline2 = 0;
+  cv::Size tsize_xyz = cv::getTextSize(labelstr,
+    face, fscale2, thickness,
+    &baseline2);
+  cv::Size tsize_cls = cv::getTextSize(oclassstr,
+    face, fscale1, thickness,
+    &baseline1);
+  int labelwidth = (tsize_xyz.width > tsize_cls.width) ? tsize_xyz.width : tsize_cls.width;
+
+  /* std::cout << ">>> ("
+            << tsize_cls.height << ", "
+            << baseline1 << "), ("
+            << tsize_xyz.height << ", "
+            << baseline2 << ")"
+            << std::endl; */
+
+  labelwidth += lwidth * 2;
+  //int labelheight1 = tsize_cls.height+baseline1+lwidth/2;
+  //int labelheight2 = tsize_xyz.height+baseline2+lwidth/2;
+  int labelheight1 = tsize_cls.height + lwidth + baseline1;
+  int labelheight2 = tsize_xyz.height + lwidth;
+  int labelhwidth = labelwidth / 2;
+
+  rectp1 = c1 + cv::Point(-labelhwidth, labelheight2);
+  rectp2 = c1 + cv::Point(labelhwidth, -labelheight1);
+  //textp_cls = c1 + cv::Point(-labelhwidth+lwidth, -baseline1);
+  //textp_xyz = c1 + cv::Point(-labelhwidth+lwidth, -lwidth + labelheight2);
+  textp_cls = c1 + cv::Point(-tsize_cls.width / 2, -baseline1);
+  textp_xyz = c1 + cv::Point(-tsize_xyz.width / 2, -lwidth + labelheight2);
+
+  return;
+}
+
 int
-eSRS::DetectionMap::display(const std::string wlabel, const int msec,
+eSRS::DetectionMap::drawObstacleRegion(UFV::ImageData<unsigned char> &bbox)
+const
+{
+  //! 検出結果描画先と Depth Mapの width、height、チャンネル数の
+  //  いずれかが異なる場合、エラー復帰する
+  if (bbox.width() != this->width() || bbox.height() != this->height() ||
+    bbox.nchannels() != 3)
+  {
+    return UFV::NG;
+  }
+
+  //! 検出結果描画用の Matインスタンスを生成する
+  cv::Mat img(cv::Size(this->width(), this->height()), CV_8UC3, bbox.data());
+
+  UFV::Color ucolor(255.0, 0.0, 0.0);
+
+  short *plbl = m_labeled.data();
+  uchar *pbox = bbox.data();
+  for (int i = 0; i < this->width()*this->height(); i++)
+  {
+    if (*plbl > 0)
+    {
+        *pbox *= ucolor.b / 255.0;
+        *(pbox + 1) *= ucolor.g / 255.0;
+        *(pbox + 2) *= ucolor.r / 255.0;
+    }
+    pbox += 3;
+    plbl++;
+  }
+
+#ifdef DRAWLABELBOX
+  //! 検出結果を表す矩形の枠線の太さを設定する
+  int lwidth = bbox.height() * 0.005;
+
+  //! 検出結果数分、以下の処理を行う
+  for (unsigned int i = 0; i < m_obs_vec.size(); i++)
+  {
+    //! - 矩形の頂点と反対側の頂点を算出する
+    cv::Point p1;
+    p1.x = m_obs_vec[i].igrv.x;
+    p1.y = m_obs_vec[i].igrv.y;
+
+    //! - 画像に矩形を描画する
+    if (this->m_flg_drawlabel)
+    {
+      //double fscale = 0.5/mag;
+      double fscale1 = 0.5;
+      double fscale2 = 0.35;
+      int face = cv::FONT_HERSHEY_SIMPLEX;
+      int thickness = lwidth / 3;
+      std::string xyzlabel;
+      cv::Point rectp1, rectp2, textp_xyz, textp_cls;
+      get_reg_label(m_obs_vec[i].bvol, fscale1, fscale2,
+        face, thickness, lwidth,
+        p1, "unknown",
+        xyzlabel, rectp1, rectp2,
+        textp_cls, textp_xyz);
+
+      cv::rectangle(img, rectp1, rectp2,
+        cv::Scalar(ucolor.b, ucolor.g, ucolor.r),
+        cv::FILLED, 8);
+      cv::putText(img, "unknown",
+        textp_cls, face, fscale1,
+        cv::Scalar(0, 0, 0), thickness, cv::LINE_AA);
+      cv::putText(img, xyzlabel.c_str(),
+        textp_xyz, face, fscale2,
+        cv::Scalar(0, 0, 0), thickness, cv::LINE_AA);
+
+    }
+  }
+#endif
+
+  //this->printObstacles(stdout);
+
+  return UFV::OK;
+}
+
+int
+eSRS::DetectionMap::drawObstacleRegionWithLabel(UFV::ImageData<unsigned char> &bbox)
+const
+{
+  //! 検出結果描画先と Depth Mapの width、height、チャンネル数の
+  //  いずれかが異なる場合、エラー復帰する
+  if (bbox.width() != this->width() || bbox.height() != this->height() ||
+    bbox.nchannels() != 3)
+  {
+    return UFV::NG;
+  }
+
+  //! 検出結果描画用の Matインスタンスを生成する
+  cv::Mat img(cv::Size(this->width(), this->height()), CV_8UC3, bbox.data());
+
+  UFV::Color ucolor(255.0, 0.0, 0.0);
+
+  short *plbl = m_labeled.data();
+  uchar *pbox = bbox.data();
+  for (int i = 0; i < this->width()*this->height(); i++)
+  {
+    if (*plbl > 0)
+    {
+      *pbox *= ucolor.b / 255.0;
+      *(pbox + 1) *= ucolor.g / 255.0;
+      *(pbox + 2) *= ucolor.r / 255.0;
+    }
+    pbox += 3;
+    plbl++;
+  }
+
+  //! 検出結果を表す矩形の枠線の太さを設定する
+  int lwidth = bbox.height() * 0.005;
+
+  //! 検出結果数分、以下の処理を行う
+  for (unsigned int i = 0; i < m_obs_vec.size(); i++)
+  {
+    //! - 矩形の頂点と反対側の頂点を算出する
+    cv::Point p1;
+    p1.x = m_obs_vec[i].igrv.x;
+    p1.y = m_obs_vec[i].igrv.y;
+
+    //! - 画像に矩形を描画する
+    if (this->m_flg_drawlabel)
+    {
+      //double fscale = 0.5/mag;
+      double fscale1 = 0.5;
+      double fscale2 = 0.35;
+      int face = cv::FONT_HERSHEY_SIMPLEX;
+      int thickness = lwidth / 3;
+      std::string xyzlabel;
+      cv::Point rectp1, rectp2, textp_xyz, textp_cls;
+      get_reg_label(m_obs_vec[i].bvol, fscale1, fscale2,
+        face, thickness, lwidth,
+        p1, "unknown",
+        xyzlabel, rectp1, rectp2,
+        textp_cls, textp_xyz);
+
+      cv::rectangle(img, rectp1, rectp2,
+        cv::Scalar(ucolor.b, ucolor.g, ucolor.r),
+        cv::FILLED, 8);
+      cv::putText(img, "unknown",
+        textp_cls, face, fscale1,
+        cv::Scalar(0, 0, 0), thickness, cv::LINE_AA);
+      cv::putText(img, xyzlabel.c_str(),
+        textp_xyz, face, fscale2,
+        cv::Scalar(0, 0, 0), thickness, cv::LINE_AA);
+
+    }
+  }
+
+  //this->printObstacles(stdout);
+
+  return UFV::OK;
+}
+
+// 画像表示(表示範囲指定)
+UFV::KeyDef
+eSRS::DetectionMap::display(const std::string wlabel, 
+                            const int msec,
                             const UFV::Rect &rect,
                             const double mag,
                             const double maxdepth) const
@@ -1404,7 +1636,8 @@ eSRS::DetectionMap::display(const std::string wlabel, const int msec,
   UFV::ImageData<unsigned char> showimg;
 
   //! ImageDataインスタンスに DepthMapと検出結果をコピーする
-  this->normalizeWithBoundingBox(showimg, maxdepth);
+  //this->normalizeWithBoundingBox(showimg, maxdepth);
+  this->normalizeWithObstacleRegion(showimg, maxdepth);
 
   //! ImageDataインスタンスを元に、画像表示用の Matインスタンスを生成する
   cv::Mat simg(cv::Size(this->width(), this->height()), CV_8UC3, 
@@ -1432,18 +1665,24 @@ eSRS::DetectionMap::display(const std::string wlabel, const int msec,
 
     //! - 'q'のキー入力を検出した場合、END_OF_FILEで復帰する
     if(rkey == XK_q)
-    return UFV::END_OF_FILE;
+    return UFV::KEY_QUIT;
 
     //! - SPACEのキー入力を検出した場合、次のキー入力を待ち続ける
     else if(rkey == XK_space)
-      cv::waitKey(0);
+    {
+      rkey = cv::waitKey(0);
+      if (rkey == XK_q)
+        return UFV::KEY_QUIT;
+      else if (rkey == XK_s)
+        return UFV::KEY_SAVE;
+    }
   }
 
-  return UFV::OK;
+  return UFV::KEY_OK;
 }
 
 // 画像表示
-int
+UFV::KeyDef
 eSRS::DetectionMap::display(const std::string wlabel, const int msec,
                             const double maxdepth) const
 {
@@ -1451,7 +1690,8 @@ eSRS::DetectionMap::display(const std::string wlabel, const int msec,
   UFV::ImageData<unsigned char> showimg;
 
   //! ImageDataインスタンスに DepthMapと検出結果をコピーする
-  this->normalizeWithBoundingBox(showimg, maxdepth);
+  //this->normalizeWithBoundingBox(showimg, maxdepth);
+  this->normalizeWithObstacleRegion(showimg, maxdepth);
 
   //! ImageDataインスタンスを元に、画像表示用の Matインスタンスを生成する
   cv::Mat simg(cv::Size(this->width(), this->height()), CV_8UC3, 
@@ -1467,14 +1707,20 @@ eSRS::DetectionMap::display(const std::string wlabel, const int msec,
 
     //! - 'q'のキー入力を検出した場合、END_OF_FILEで復帰する
     if(rkey == XK_q)
-      return UFV::END_OF_FILE;
+      return UFV::KEY_QUIT;
     
     //! - SPACEのキー入力を検出した場合、次のキー入力を待ち続ける
     else if(rkey == XK_space)
-      cv::waitKey(0);
+    {
+      rkey = cv::waitKey(0);
+      if (rkey == XK_q)
+        return UFV::KEY_QUIT;
+      else if (rkey == XK_s)
+        return UFV::KEY_SAVE;
+    }
   }
 
-  return UFV::OK;
+  return UFV::KEY_OK;
 }
 
 // 画像ファイル書き込み
@@ -1489,7 +1735,8 @@ eSRS::DetectionMap::writeImage(const std::string name,
   UFV::ImageData<unsigned char> showimg;
 
   //! ImageDataインスタンスに DepthMapと検出結果をコピーする
-  this->normalizeWithBoundingBox(showimg, maxdepth);
+  //this->normalizeWithBoundingBox(showimg, maxdepth);
+  this->normalizeWithObstacleRegion(showimg, maxdepth);
 
   //! ImageDataインスタンスを元に、画像ファイル書き込み用の Matインスタンスを生成する
   cv::Mat simg(cv::Size(this->width(), this->height()), CV_8UC3, 
@@ -1525,7 +1772,8 @@ eSRS::DetectionMap::writeImage(const UFV::Rect &rect, const double mag,
   UFV::ImageData<unsigned char> showimg;
 
   //! ImageDataインスタンスに DepthMapと検出結果をコピーする
-  this->normalizeWithBoundingBox(showimg, maxdepth);
+  //this->normalizeWithBoundingBox(showimg, maxdepth);
+  this->normalizeWithObstacleRegion(showimg, maxdepth);
 
   //! ImageDataインスタンスを元に、画像ファイル書き込み用の Matインスタンスを生成する
   cv::Mat simg(cv::Size(this->width(), this->height()), CV_8UC3, 

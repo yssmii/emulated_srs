@@ -180,13 +180,16 @@ eSRS::DepthMap::normalize(UFV::ImageData<unsigned char> &img,
   return UFV::OK;
 }
 
-int
+UFV::KeyDef
 eSRS::DepthMap::display(const std::string wlabel, const int msec,
                         double maxdepth) const
 {
   UFV::ImageData<unsigned char> showimg(this->width(), this->height(), 3);
   int ret = this->normalize(showimg,maxdepth);
-  if(ret != UFV::OK) return ret;
+  if (ret == UFV::NG)
+    return UFV::KEY_NG;
+  else if (UFV::ERR)
+    return UFV::KEY_ERR;
 
   cv::Mat simg(cv::Size(this->width(), this->height()), CV_8UC3, 
                showimg.data());
@@ -195,10 +198,18 @@ eSRS::DepthMap::display(const std::string wlabel, const int msec,
   {
     int rkey = cv::waitKey(msec);
     if(rkey == XK_q)
-      return UFV::END_OF_FILE;
+      return UFV::KEY_QUIT;
+    else if (rkey == XK_space)
+    {
+      rkey = cv::waitKey(0);
+      if (rkey == XK_q)
+        return UFV::KEY_QUIT;
+      else if (rkey == XK_s)
+        return UFV::KEY_SAVE;
+    }
   }
 
-  return UFV::OK;
+  return UFV::KEY_OK;
 }
 
 int

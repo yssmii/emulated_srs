@@ -133,12 +133,12 @@ public:
   virtual int normalize(UFV::ImageData<unsigned char> &img,
                         const double maxval) const;
 
-  virtual int display(const std::string wlabel, const int msec,
-                      const double maxval=255.0) const;
-  virtual int display(const std::string wlabel, const int msec,
-                      const UFV::Rect &rect,  // 表示範囲 ROI
-                      const double mag,  // 表示倍率、0以下なら何もしない
-                      const double maxval=255.0) const;
+  virtual UFV::KeyDef display(const std::string wlabel, const int msec,
+                        const double maxval=255.0) const;
+  virtual UFV::KeyDef display(const std::string wlabel, const int msec,
+                        const UFV::Rect &rect,  // 表示範囲 ROI
+                        const double mag,  // 表示倍率、0以下なら何もしない
+                        const double maxval=255.0) const;
 
   virtual int displayRaw(const std::string wlabel, const int msec) const;
 
@@ -416,14 +416,18 @@ ImageData<T>::convertGray(ImageData<T> &img, double maxval) const
 }
 
 template<class T>
-int
-ImageData<T>::display(const std::string wlabel, const int msec,
+UFV::KeyDef
+ImageData<T>::display(const std::string wlabel,
+                      const int msec,
                       const double maxval) const
 {
   UFV::ImageData<unsigned char> showimg(this->width(),
                                         this->height(), this->nchannels());
   int ret = this->normalize(showimg, maxval);
-  if(ret != UFV::OK) return ret;
+  if (ret == UFV::NG)
+    return UFV::KEY_NG;
+  else if (ret == UFV::ERR)
+    return UFV::KEY_ERR;
 
   int itype = (this->nchannels() == 3) ? CV_8UC3 : CV_8U;
   cv::Mat simg(cv::Size(this->width(), this->height()), itype,
@@ -433,24 +437,39 @@ ImageData<T>::display(const std::string wlabel, const int msec,
   {
     int kret = cv::waitKey(msec);
     if(kret == XK_q)
-      return UFV::END_OF_FILE;
+      return UFV::KEY_QUIT;
     else if(kret == XK_space)
-      cv::waitKey(0);
+    {
+      kret = cv::waitKey(0);
+      if(kret == XK_q)
+      {
+        return UFV::KEY_QUIT;
+      }
+      else if (kret == XK_s)
+      {
+        return UFV::KEY_SAVE;
+      }
+    }
   }
 
-  return UFV::OK;
+  return UFV::KEY_OK;
 }
 
 template<class T>
-int
-ImageData<T>::display(const std::string wlabel, const int msec,
-                      const UFV::Rect &rect, const double mag,
+UFV::KeyDef
+ImageData<T>::display(const std::string wlabel,
+                      const int msec,
+                      const UFV::Rect &rect,
+                      const double mag,
                       const double maxval) const
 {
   UFV::ImageData<unsigned char> showimg(this->width(), this->height(),
                                         this->nchannels());
   int ret = this->normalize(showimg, maxval);
-  if(ret != UFV::OK) return ret;
+  if (ret == UFV::NG)
+    return UFV::KEY_NG;
+  else if (ret == UFV::ERR)
+    return UFV::KEY_ERR;
 
   int itype = (this->nchannels() == 3) ? CV_8UC3 : CV_8U;
   cv::Mat simg(cv::Size(this->width(), this->height()), itype,
@@ -471,12 +490,22 @@ ImageData<T>::display(const std::string wlabel, const int msec,
   {
     int kret = cv::waitKey(msec);
     if(kret == XK_q)
-      return UFV::END_OF_FILE;
+      return UFV::KEY_QUIT;
     else if(kret == XK_space)
-      cv::waitKey(0);
+    {
+      kret = cv::waitKey(0);
+      if (kret == XK_q)
+      {
+        return UFV::KEY_QUIT;
+      }
+      else if (kret == XK_s)
+      {
+        return UFV::KEY_SAVE;
+      }
+    }
   }
 
-  return UFV::OK;
+  return UFV::KEY_OK;
 }
 
 template<class T>
@@ -495,7 +524,10 @@ UFV::ImageData<T>::displayRaw(const std::string wlabel,
     if(kret == XK_q)
       return UFV::END_OF_FILE;
     else if(kret == XK_space)
-      cv::waitKey(0);
+    {
+      kret = cv::waitKey(0);
+      if(kret == XK_q) return UFV::END_OF_FILE;
+    }
   }
 
   return UFV::OK;

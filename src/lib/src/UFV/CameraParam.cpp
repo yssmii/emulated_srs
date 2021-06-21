@@ -84,7 +84,6 @@ UFV::CameraParam::CameraParam(const int width,
 }
 
 UFV::CameraParam::CameraParam(std::istream &is, const int nth_yamldoc)
-    throw(UFV::CameraParam::BadParamException)
     : m_width(0),
       m_height(0)
 {
@@ -101,8 +100,6 @@ UFV::CameraParam::CameraParam(std::istream &is, const int nth_yamldoc)
 }
 
 UFV::CameraParam::CameraParam(const char *fpath, const int nth_yamldoc)
-    throw(UFV::CameraParam::IOError,
-          UFV::CameraParam::BadParamException)
     : m_width(0),
       m_height(0)
 {
