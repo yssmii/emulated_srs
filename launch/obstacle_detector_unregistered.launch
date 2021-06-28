@@ -1,0 +1,27 @@
+<launch>
+  <arg name="zkey" default="1500.0" />
+  
+  <arg name="min_gap_of_occluding_boundary" default="100.0" />
+  <arg name="min_pixels_as_object" default="500" />
+  <arg name="min_overlap_rate" default="0.8" />
+  
+  <arg name="use_mask_p" default="0" />
+  
+  <arg name="display_images_p" default="1" />
+  <arg name="publish_images_p" default="0" />
+  <arg name="publish_markers_p" default="0" />
+  
+  <node name="obstacle_classifier" pkg="emulated_srs" type="obstacle_detector_unregistered"
+	output="screen" cwd="node">
+    <param name="zkey" value="$(arg zkey)" />
+    <param name="min_gap_of_occluding_boundary"
+	   value="$(arg min_gap_of_occluding_boundary)" />
+    <param name="min_pixels_as_object" value="$(arg min_pixels_as_object)" />
+    <param name="min_overlap_rate" value="$(arg min_overlap_rate)" />
+    <param name="use_mask_p" value="$(arg use_mask_p)" />
+    <param name="display_images_p" value="$(arg display_images_p)" />
+    <param name="publish_images_p" value="$(arg publish_images_p)" />
+    <param name="publish_markers_p" value="$(arg publish_markers_p)" />
+  </node>
+</launch>
+ 

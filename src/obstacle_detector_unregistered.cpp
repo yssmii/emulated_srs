@@ -1,6 +1,6 @@
 // -*- C++ -*-
 /**
- * @file  obstacle_detector.cpp
+ * @file  obstacle_detector_unregistered.cpp
  * @brief A class of a ROS node for obstacle detection with classification
  *
  * @author Yasushi SUMI <y.sumi@aist.go.jp>
@@ -27,38 +27,38 @@
 #include <visualization_msgs/Marker.h>
 #include <opencv2/core.hpp>
 
-#include "obstacle_detector.h"
+#include "obstacle_detector_unregistered.h"
 
 #include <emulated_srs/ClassifiedObstacle.h>
 #include <emulated_srs/ClassifiedObstacleArray.h>
 
-const float emulated_srs::ObstacleDetector::TC_OPT_THRESHOLD_ZKEY = 1500.0;
-const float emulated_srs::ObstacleDetector::TC_OPT_THRESHOLD_GAP = 100.0;
-const float emulated_srs::ObstacleDetector::TC_OPT_MIN_OVERLAP_RATE = 0.8;
-const std::string emulated_srs::ObstacleDetector::TC_OPT_MASKFILE = "MASK.png";
+const float emulated_srs::ObstacleDetectorUnregistered::TC_OPT_THRESHOLD_ZKEY = 1500.0;
+const float emulated_srs::ObstacleDetectorUnregistered::TC_OPT_THRESHOLD_GAP = 100.0;
+const float emulated_srs::ObstacleDetectorUnregistered::TC_OPT_MIN_OVERLAP_RATE = 0.8;
+const std::string emulated_srs::ObstacleDetectorUnregistered::TC_OPT_MASKFILE = "MASK.png";
 
 /*!
  *  @brief main function
+*/
 int main(int argc, char** argv)
 {
-  ros::init (argc, argv, "obstacle_detector");
+  ros::init (argc, argv, "obstacle_detector_unregistered");
 
-  emulated_srs::ObstacleDetector obstacle_detector;
+  emulated_srs::ObstacleDetectorUnregistered obstacle_detector;
 
   ros::spin();
 
   return 0;
 }
-*/
 
-emulated_srs::ObstacleDetector::ObstacleDetector(void)
+emulated_srs::ObstacleDetectorUnregistered::ObstacleDetectorUnregistered(void)
     :
     param_zkey_(TC_OPT_THRESHOLD_ZKEY),
     param_gap_(TC_OPT_THRESHOLD_GAP),
     param_min_size_(TC_OPT_MIN_BLOBSIZE),
     param_min_overlap_(TC_OPT_MIN_OVERLAP_RATE),
     param_use_mask_p_(0),
-    param_display_images_p_(0),
+    param_display_images_p_(1),
     param_publish_images_p_(0),
     param_publish_markers_p_(0),
     param_experimental_doublecheck_p_(false),
@@ -104,8 +104,8 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
 
   timestamp_pointcloud2_subscribed_ = ros::Time::now();
 
-  subscriber_ = node_handle_.subscribe("/camera/depth_registered/points", 1,
-                                       &emulated_srs::ObstacleDetector::pc2Callback, this);
+  subscriber_ = node_handle_.subscribe("/camera/depth/points", 1,
+                                       &emulated_srs::ObstacleDetectorUnregistered::pc2Callback, this);
   ROS_INFO("subscriber: OK");
 }
 
@@ -125,7 +125,7 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
  * @else
  * @endif
  */
-void emulated_srs::ObstacleDetector::pc2Callback(
+void emulated_srs::ObstacleDetectorUnregistered::pc2Callback(
     const sensor_msgs::PointCloud2ConstPtr &pc2)
 {
   bool bret;
@@ -153,7 +153,7 @@ void emulated_srs::ObstacleDetector::pc2Callback(
     ROS_INFO_ONCE("initialize completed");
   }
 
-  //pointcloud2からデータを抜き取り画像データ深度画像とrgb画像を作る。
+  //pointcloud2からデータを抜き取り画像データ深度を作る。
   bret = convertPC2ToMapData(pc2);
   if (bret == false)
   {
@@ -176,7 +176,7 @@ void emulated_srs::ObstacleDetector::pc2Callback(
   object_count = execObstacleDetection();
   //map_for_detection_.display("Det", -1);
 
-  ROS_INFO_ONCE("obstacle detection completed");
+  ROS_INFO_ONCE("obstacle detection completed: %d", object_count);
 
   //検知・分類された物体のリストを取得
   map_for_detection_.getObstacleClassified(obstacle_classified);
@@ -199,25 +199,21 @@ void emulated_srs::ObstacleDetector::pc2Callback(
 /*!
  * @if jp
  *
- * @brief 深度画像、rgb画像用のオブジェクトのインスタンス化と初期設定を行う
+ * @brief 深度画像用のオブジェクトのインスタンス化と初期設定を行う
  * @param[in] width 画像の幅
  * @param[in] height 画像の高さ
  * @note ROSの機能により、.launchファイルでparam_xxの値は変更できます。
  *
  * @endif
  */
-void emulated_srs::ObstacleDetector::initializeMap(
+void emulated_srs::ObstacleDetectorUnregistered::initializeMap(
   const int width,
   const int height)
 {
-  map_for_rgb_display_.reshape(width, height);
-  ROS_INFO_ONCE("IntensityMapMask");
-
   map_for_detection_.reshape(width, height);
   ROS_INFO_ONCE("ClassificationMap");
 
   map_for_showing_depth_data_.reshape(width, height, IMAGE_N_CHANNELS);  
-  map_for_showing_rgb_data_.reshape(width, height, IMAGE_N_CHANNELS);  
   ROS_INFO_ONCE("reshape");
 
   map_for_detection_.setZkey(param_zkey_);                  // mm
@@ -244,28 +240,25 @@ void emulated_srs::ObstacleDetector::initializeMap(
  *
  * @endif
  */
-bool emulated_srs::ObstacleDetector::convertPC2ToMapData(
+bool emulated_srs::ObstacleDetectorUnregistered::convertPC2ToMapData(
     const sensor_msgs::PointCloud2ConstPtr &point_cloud2)
 {
   unsigned long x_offset;
   unsigned long y_offset;
   unsigned long z_offset;
-  unsigned long rgb_offset;
   bool result;
 
-  //pointcloud2メッセージからx,y,z,rgbの情報が保存されている配列のオフセット情報を取り出す
+  //pointcloud2メッセージからx,y,zの情報が保存されている配列のオフセット情報を取り出す
   result = retrievePC2OffsetInfomation(point_cloud2,
-                                       x_offset, y_offset, z_offset,
-                                       rgb_offset);
+                                       x_offset, y_offset, z_offset);
   if(result == false)
   {
     return result;
   }
 
   //オフセット情報をもとに点群データから深度情報の2次元マップを作る （map_for_detection_に値が入る）
-  result = createDepthMapAndRGBMap(point_cloud2,
-                                   x_offset, y_offset, z_offset,
-                                   rgb_offset);
+  result = createDepthMap(point_cloud2,
+                          x_offset, y_offset, z_offset);
   if (result == false)
   {
     return result;
@@ -279,7 +272,7 @@ bool emulated_srs::ObstacleDetector::convertPC2ToMapData(
  * @brief 処理画像のマスク処理を行う
  * @endif
 */
-void emulated_srs::ObstacleDetector::setMaskToMapData()
+void emulated_srs::ObstacleDetectorUnregistered::setMaskToMapData()
 {
   bool ret(false);
 
@@ -287,14 +280,6 @@ void emulated_srs::ObstacleDetector::setMaskToMapData()
   if (ret == true)
   {
     map_for_detection_.mask();
-  }
-
-  //ret = map_for_classification_.hasMaskImage();
-  ret = map_for_rgb_display_.hasMaskImage();
-  if (ret == true)
-  {
-    //map_for_classification_.mask();
-    map_for_rgb_display_.mask();
   }
 
   return;
@@ -307,12 +292,8 @@ void emulated_srs::ObstacleDetector::setMaskToMapData()
  * @param[out] xoffset
  * @param[out] yoffset
  * @param[out] zoffset
- * @param[out] rgboffset
  * @retval false 解析できなかった（想定していたフォーマットでは無い）
  * @retval true 解析完了
- * @note
- * http://docs.ros.org/melodic/api/sensor_msgs/html/msg/PointCloud2.html
- * ex) realsense ros D435
  * <PRE>
  * height: 480  #画像高さ
  * width: 640   #画像幅
@@ -332,26 +313,19 @@ void emulated_srs::ObstacleDetector::setMaskToMapData()
  *     offset: 8
  *     datatype: 7
  *     count: 1
- *   - 
- *     name: "rgb"
- *     offset: 16
- *     datatype: 7      #=>FLOAT32となっているが実際はUINT32でRGBA情報で飛んできている（Aは透明度）
- *     count: 1
  * is_bigendian: False  #エンディアン
- * point_step: 32       #1つの情報のバイトサイズ
- * row_step: 20480      #1行あたりの情報のバイトサイズ -- row_step x height = 全情報
+ * point_step: 16       #1つの情報のバイトサイズ
+ * row_step: 10240      #1行あたりの情報のバイトサイズ -- row_step x height = 全情報
  *                                                     -- point_step x width = row_step
  * </PRE>
- * |x   |y   |z   |na  |rgba|other info  |  32バイトというフォーマットになっている
- * D435ではこのようになっているが、他のカメラでもこの32バイトフォーマットが一般的でother infoの場所にデータ信頼性や付属情報が載る 
+ * |x   |y   |z   |other info  |  16バイトというフォーマットになっている
  * @endif
  */
-bool emulated_srs::ObstacleDetector::retrievePC2OffsetInfomation(
+bool emulated_srs::ObstacleDetectorUnregistered::retrievePC2OffsetInfomation(
     const sensor_msgs::PointCloud2ConstPtr &pc2,
     unsigned long &x_offset,
     unsigned long &y_offset,
-    unsigned long &z_offset,
-    unsigned long &rgb_offset)
+    unsigned long &z_offset)
 {
   int fsize;
   std::string str;
@@ -361,7 +335,6 @@ bool emulated_srs::ObstacleDetector::retrievePC2OffsetInfomation(
   x_offset = 0xFFFFFFFF;
   y_offset = 0xFFFFFFFF;
   z_offset = 0xFFFFFFFF;
-  rgb_offset = 0xFFFFFFFF;
 
   //x,y,zの深度データのオフセット情報を取得
   for(int i = 0; i < fsize; i++)
@@ -379,17 +352,12 @@ bool emulated_srs::ObstacleDetector::retrievePC2OffsetInfomation(
     {
       z_offset = pc2->fields[i].offset;
     }
-    else if(str == "rgb")
-    {
-      rgb_offset = pc2->fields[i].offset;
-    }
   }
 
   //check
   if ((x_offset == 0xFFFFFFFF) ||
       (y_offset == 0xFFFFFFFF) ||
-      (z_offset == 0xFFFFFFFF) ||
-      (rgb_offset == 0xFFFFFFFF))
+      (z_offset == 0xFFFFFFFF))
   {
     ROS_ERROR("Unsupported PC2. No offset data.");
     return false;
@@ -409,16 +377,14 @@ bool emulated_srs::ObstacleDetector::retrievePC2OffsetInfomation(
  * @param[in] x_offset "x軸方向の距離データ"の配列内オフセット値
  * @param[in] y_offset "y軸方向の距離データ"の配列内オフセット値
  * @param[in] z_offset "z軸方向の距離データ"の配列内オフセット値
- * @param[in] rgb_offset "rgbデータ"の配列内オフセット値
  *
  * @endif
  */
-bool emulated_srs::ObstacleDetector::createDepthMapAndRGBMap(
+bool emulated_srs::ObstacleDetectorUnregistered::createDepthMap(
     const sensor_msgs::PointCloud2ConstPtr &pc2,
     unsigned long x_offset,
     unsigned long y_offset,
-    unsigned long z_offset,
-    unsigned long rgba_offset)
+    unsigned long z_offset)
 {
   if (map_for_detection_.width() == 0)
   {
@@ -430,7 +396,6 @@ bool emulated_srs::ObstacleDetector::createDepthMapAndRGBMap(
   float *x_dep;
   float *y_dep;
   float *z_dep;
-  unsigned char *i_map;
   int point_step;
   int pc2_data_size;
   int map_idx;
@@ -440,19 +405,15 @@ bool emulated_srs::ObstacleDetector::createDepthMapAndRGBMap(
   y_dep = map_for_detection_.ydata();
   z_dep = map_for_detection_.data();
 
-  //i_map = map_for_classification_.getData<unsigned char>();
-  i_map = map_for_rgb_display_.getData<unsigned char>();
-
   pc2data = pc2->data.data();                            //pointcloud2にある生データ配列の先頭ポインタ
   point_step = pc2->point_step;                          //pointcloud2にある生データ配列の1データブロックあたりのサイズ
   pc2_data_size = pc2->width * pc2->height * point_step; //pointcloud2にある生データ配列のサイズ
 
-  //|x1|y1|z1|n|rgba1|nn|x2|y2|z2|n|rgba2|nn|x3|y3|z3|・・・
+  //|x1|y1|z1|nx2|y2|z2|n|x3|y3|z3|・・・
   //↑処理前 ↓処理後
   //|x1|x2|x3|・・・
   //|y1|y2|y3|・・・
   //|z1|z2|z3|・・・
-  //|r1|g1|b1|r2|g2|b2|r3|g3|b3|・・・
   map_idx = 0;
   for (int i = 0; i < pc2_data_size; i += point_step)
   {
@@ -476,11 +437,6 @@ bool emulated_srs::ObstacleDetector::createDepthMapAndRGBMap(
       z_dep[map_idx] *= 1000;
     }
 
-    //rgba処理(aは処理しない)
-    i_map[(map_idx * 3)] = pc2data[(i + rgba_offset)];         //r
-    i_map[(map_idx * 3) + 1] = pc2data[(i + rgba_offset) + 1]; //g
-    i_map[(map_idx * 3) + 2] = pc2data[(i + rgba_offset) + 2]; //b
-
     map_idx++;
   } //loopend
 
@@ -493,7 +449,7 @@ bool emulated_srs::ObstacleDetector::createDepthMapAndRGBMap(
  * @retval 検出した障害物の数 
  * @endif
 */
-int emulated_srs::ObstacleDetector::execObstacleDetection(void)
+int emulated_srs::ObstacleDetectorUnregistered::execObstacleDetection(void)
 {
   int object_count = map_for_detection_.detect();
 
@@ -509,7 +465,7 @@ int emulated_srs::ObstacleDetector::execObstacleDetection(void)
  *       マーカーや画像データをパブリッシュするかどうかは起動時のlaunchに従う。
  * @endif
 */
-void emulated_srs::ObstacleDetector::publishAll(
+void emulated_srs::ObstacleDetectorUnregistered::publishAll(
   const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
   const int object_count)
 {
@@ -519,29 +475,18 @@ void emulated_srs::ObstacleDetector::publishAll(
   {
     publishMarkersMessage(obstacle_classified, object_count);
   }
-  if(param_publish_images_p_)
-  {
-    publishImagesMessage();
-  }
   return;
 }
 
-void emulated_srs::ObstacleDetector::displayAll(void)
+void emulated_srs::ObstacleDetectorUnregistered::displayAll(void)
 {
   if(!(param_display_images_p_ || param_publish_images_p_)) return;
   
-  // 輝度画像を表示
-  //map_for_showing_image_data_ = *(map_for_classification_.getImageData<unsigned char>());
-  map_for_showing_rgb_data_ = *(map_for_rgb_display_.getImageData<unsigned char>());
-
   //深度画像に枠と分類情報をオーバーライド(この時点で分類作業が終わり、オブジェクトに情報を渡していること)
   map_for_detection_.drawObstacleRegion(map_for_showing_depth_data_);
-  //map_for_classification_.drawBoundingBox(map_for_showing_image_data_);
-  map_for_detection_.drawBoundingBox(map_for_showing_rgb_data_);
 
   if (param_display_images_p_)
   {
-    map_for_showing_rgb_data_.display("RGB", 10);
     map_for_showing_depth_data_.display("Depth", 10);
   }
 
@@ -554,17 +499,9 @@ void emulated_srs::ObstacleDetector::displayAll(void)
  * 障害物検知、分類済み画像データをpublishする
  * @endif
  */
-int emulated_srs::ObstacleDetector::publishImagesMessage(void)
+int emulated_srs::ObstacleDetectorUnregistered::publishImagesMessage(void)
 {
   sensor_msgs::ImagePtr msg;
-
-  cv::Size ysize(map_for_showing_rgb_data_.width(),
-                 map_for_showing_rgb_data_.height());
-  cv::Mat yoloimg(ysize, CV_8UC3, map_for_showing_rgb_data_.data());
-
-  msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", yoloimg).toImageMsg();
-
-  publisher_image_rgb_.publish(msg);
 
   cv::Size dsize(map_for_showing_depth_data_.width(),
                  map_for_showing_depth_data_.height());
@@ -619,7 +556,7 @@ int emulated_srs::ObstacleDetector::publishImagesMessage(void)
  * </PRE>
  * @endif
  */
-int emulated_srs::ObstacleDetector::publishObstaclesMessage(
+int emulated_srs::ObstacleDetectorUnregistered::publishObstaclesMessage(
   const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
   const int object_count)
 {
@@ -685,7 +622,7 @@ int emulated_srs::ObstacleDetector::publishObstaclesMessage(
  * @param[in] object_count 検知した障害物の数
  * @endif
 */
-int emulated_srs::ObstacleDetector::publishMarkersMessage(
+int emulated_srs::ObstacleDetectorUnregistered::publishMarkersMessage(
     const std::vector<eSRS::ObstacleClassified> &obs,
     const int nobs)
 {
