@@ -11,7 +11,8 @@
   <arg name="publish_images_p" default="0" />
   <arg name="publish_markers_p" default="0" />
   
-  <node name="obstacle_classifier" pkg="emulated_srs" type="obstacle_detector_unregistered"
+  <node name="obstacle_detector_unregistered" pkg="emulated_srs"
+        type="obstacle_detector_unregistered"
 	output="screen" cwd="node">
     <param name="zkey" value="$(arg zkey)" />
     <param name="min_gap_of_occluding_boundary"
