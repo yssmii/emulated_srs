@@ -37,10 +37,10 @@ namespace emulated_srs
  * @class ObstacleDetector
  * @if jp
  *
- * @brief 物体検出 ROS ノード
+ * @brief ROS node for obstaclle detection
  *
- * - PointCloud2 (organized) を subscribe
- * - 検出した障害物情報を publish
+ * - Subscribe PointCloud2 (organized)
+ * - Publish the data of detected obstacles
  *
  * @endif
  */
@@ -119,18 +119,21 @@ private:
   int publishImagesMessage(
     void);
 
-protected:  
-  //! 障害物検知オブジェクト
+protected:
+  //! the number of the obstacle detection executions
+  unsigned int count_detection_;
+  
+  //! instance for the obstacle detection
   eSRS::ClassificationMap map_for_detection_;
   
-  //! RGB表示オブジェクト
+  //! instance for displaying RGB images
   emulated_srs::IntensityMapMask map_for_rgb_display_;
 
-  //!画像表示用データ
+  //! depth and RGB image data for displaying
   UFV::ImageData<unsigned char> map_for_showing_depth_data_;
   UFV::ImageData<unsigned char> map_for_showing_rgb_data_;
 
-  //!距離画像におけるパラメータ
+  //! parameters for the obstacle detection
   float param_zkey_;
   float param_gap_;
   int param_min_size_;
@@ -141,35 +144,32 @@ protected:
   int param_publish_markers_p_;
   bool param_experimental_doublecheck_p_;
 
+  //! set true after the 1st subscription of PC2
   bool flg_initialized_p_;
 
 private:
-  //!ROSノードハンドル
+  //! ROS node handle
   ros::NodeHandle node_handle_;
-  //!ROSサブスクライバ
+  
+  //! ROS subscriber
   ros::Subscriber subscriber_;
 
-  //!ROSパブリッシャ
-  //!マーカーデータ用パブリッシャ
+  //! ROS publishers
   ros::Publisher publisher_marker_;
-  //!検知された障害物データ用パブリッシャ
   ros::Publisher publisher_obstacle_;
-  //!距離画像データ用パブリッシャ
   image_transport::Publisher publisher_image_depth_;
   image_transport::Publisher publisher_image_rgb_;
 
-  //!pointcloud2をsubscribeしたときのタイムスタンプ
-  ros::Time timestamp_pointcloud2_subscribed_;
+  ros::Publisher publisher_exp_setup_; // experiment setup
 
-  //!検出結果をpublishしたときのタイムスタンプ
+  //! timestamp of subscribed PC2
+  ros::std_msgs::Header header_pointcloud2_;
+
+  //! timestamp when publishing obstacle data
   ros::Time timestamp_detection_result_published_;
 
-//!rosで画像を転送するためのモジュール
+  //! ROS image transporter
   image_transport::ImageTransport image_transport_;
-
-
-  //マーカーデータ保存用配列
-  std::vector<visualization_msgs::Marker> marker_;
 
 }; //End of class ObstacleDetector
 

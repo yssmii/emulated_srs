@@ -569,17 +569,33 @@ int emulated_srs::ObstacleDetectorUnregistered::publishObstaclesMessage(
     //obsmsg.stamp = timestamp_subscribe_pointcloud2_; // データsubscribe時刻
     obsmsg.stamp = timestamp_detection_result_published_;
 
-    obsmsg.n = 0;
-    obsmsg.type = "none";
-    obsmsg.confidence = 0.0;
+    obsmsg.type_class = "none";
+    obsmsg.confidence_class = 0.0;
 
-    obsmsg.point.x = 0.0;
-    obsmsg.point.y = 0.0;
-    obsmsg.point.z = 0.0;
+    obsmsg.position_3D.x = 0.0;
+    obsmsg.position_3D.y = 0.0;
+    obsmsg.position_3D.z = 0.0;
 
-    obsmsg.scale.x = 0.0;
-    obsmsg.scale.y = 0.0;
-    obsmsg.scale.z = 0.0;
+    obsmsg.dimensions_3D.x = 0.0;
+    obsmsg.dimensions_3D.y = 0.0;
+    obsmsg.dimensions_3D.z = 0.0;
+
+    obsmsg.centroid_3D.x = 0.0;
+    obsmsg.centroid_3D.y = 0.0;
+    obsmsg.centroid_3D.z = 0.0;
+
+    obsmsg.position_2D.x = 0.0;
+    obsmsg.position_2D.y = 0.0;
+
+    obsmsg.dimensions_2D.x = 0.0;
+    obsmsg.dimensions_2D.y = 0.0;
+
+    obsmsg.centroid_2D.x = 0.0;
+    obsmsg.centroid_2D.y = 0.0;
+
+    obsmsg.n_points = 0;
+
+    obsmsg.filename_saved = "";
 
     obsmsgary.obstacles.push_back(obsmsg);
   }
@@ -603,6 +619,33 @@ int emulated_srs::ObstacleDetectorUnregistered::publishObstaclesMessage(
       obsmsg.scale.x = obstacle_classified[i].bvol.depth / 1000.0;
       obsmsg.scale.y = obstacle_classified[i].bvol.width / 1000.0;
       obsmsg.scale.z = obstacle_classified[i].bvol.height / 1000.0;
+
+      obsmsg.type_class = obstacle_classified[i].classstr;
+      obsmsg.confidence_class = obstacle_classified[i].conf;
+
+      obsmsg.position_3D.x = obstacle_classified[i].bvol.x / 1000.0;
+      obsmsg.position_3D.y = obstacle_classified[i].bvol.y / 1000.0;
+      obsmsg.position_3D.z = obstacle_classified[i].bvol.z / 1000.0;
+
+      obsmsg.dimensions_3D.x = obstacle_classified[i].bvol.width / 1000.0;
+      obsmsg.dimensions_3D.y = obstacle_classified[i].bvol.height / 1000.0;
+      obsmsg.dimensions_3D.z = obstacle_classified[i].bvol.depth / 1000.0;
+
+      obsmsg.centroid_3D.x = obstacle_classified[i].grv.x / 1000.0;
+      obsmsg.centroid_3D.y = obstacle_classified[i].grv.y / 1000.0;
+      obsmsg.centroid_3D.z = obstacle_classified[i].grv.z / 1000.0;
+
+      obsmsg.position_2D.x = obstacle_classified[i].bbox.x / 1000.0;
+      obsmsg.position_2D.y = obstacle_classified[i].bbox.y / 1000.0;
+
+      obsmsg.dimensions_2D.x = obstacle_classified[i].bbox.width / 1000.0;
+      obsmsg.dimensions_2D.y = obstacle_classified[i].bbox.height / 1000.0;
+
+      obsmsg.centroid_2D.x = obstacle_classified[i].grv.x / 1000.0;
+      obsmsg.centroid_2D.y = obstacle_classified[i].grv.y / 1000.0;
+
+      obsmsg.n_points = obstacle_classified[i].size;
+      obsmsg.filename_saved = "";
 
       obsmsgary.obstacles.push_back(obsmsg);
     }

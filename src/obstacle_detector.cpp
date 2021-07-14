@@ -20,6 +20,7 @@
 #include <vector>
 #include <limits>
 
+#include <std_msgs/Header.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <cv_bridge/cv_bridge.h>
@@ -27,10 +28,11 @@
 #include <visualization_msgs/Marker.h>
 #include <opencv2/core.hpp>
 
-#include "obstacle_detector.h"
-
 #include <emulated_srs/ClassifiedObstacle.h>
 #include <emulated_srs/ClassifiedObstacleArray.h>
+#include <emulated_srs/ExpSetup.h>
+
+#include "obstacle_detector.h"
 
 const float emulated_srs::ObstacleDetector::TC_OPT_THRESHOLD_ZKEY = 1500.0;
 const float emulated_srs::ObstacleDetector::TC_OPT_THRESHOLD_GAP = 100.0;
@@ -68,7 +70,7 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
 {
   int param_doublecheck=0;
   
-  //.launchからの読み出し
+  // Get from .launch
   node_handle_.getParam("zkey", param_zkey_);
   node_handle_.getParam("min_gap_of_occluding_boundary", param_gap_);
   node_handle_.getParam("min_pixels_as_object", param_min_size_);
@@ -79,7 +81,7 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
   node_handle_.getParam("publish_markers_p", param_publish_markers_p_);
   node_handle_.getParam("experimental_doublecheck_p", param_doublecheck);
 
-  //確認のためコンソールに表示
+  // print them on the console for confirmation
   ROS_INFO("zkey: %f", param_zkey_);
   ROS_INFO("min_gap_of_occluding_boundary: %f", param_gap_);
   ROS_INFO("min_pixels_as_object: %d", param_min_size_);
@@ -91,6 +93,7 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
   ROS_INFO("experimental_doublecheck_p: %d", param_doublecheck);
   param_experimental_doublecheck_p_ = param_doublecheck;
 
+  // publishers and subscribers
   publisher_marker_ = node_handle_.advertise<visualization_msgs::Marker>(
       "/emulated_srs/visualization_marker", 1);
 
@@ -98,7 +101,14 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
       "/emulated_srs/obstacles", 1);
 
   publisher_image_depth_ = image_transport_.advertise(
-      "/emulated_srs/image_depth_classified", 1);
+      "/emulated_srs/depth/image_raw", 1);
+
+  publisher_image_rgb_ = image_transport_.advertise(
+      "/emulated_srs/color/image_raw", 1);
+
+  publisher_exp_setup_ =
+    node_handle_.advertise<emulated_srs::ExpSetup>(
+      "/emulated_srs/experiment_setup", 1, true); // enable latch
 
   ROS_INFO("publishers: OK");
 
@@ -106,21 +116,34 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
 
   subscriber_ = node_handle_.subscribe("/camera/depth_registered/points", 1,
                                        &emulated_srs::ObstacleDetector::pc2Callback, this);
+
   ROS_INFO("subscriber: OK");
+
+  // publish the experimental setup as a latch topic
+  emulated_srs::ExpSetup exp_setup;
+  exp_setup.name_sensor = "D435";
+  exp_setup.dist_testpiece = -1.0;
+  exp_setup.fname_mask = "MASK.png";
+  exp_setup.fname_region = "Reg.png";
+  exp_setup.param_zkey = param_zkey_;
+  exp_setup.param_min_gap = param_gap_;
+  exp_setup.param_min_size = param_min_size_;
+
+  publisher_exp_setup_.publish(exp_setup);
+
 }
 
 /*!
  * @if jp
  *
- * @brief pointcloud2データをサブスクライブした際に呼び出されるコールバック関数
+ * @brief callback function at sbscribing PC2 data
  *
- * pointcloud2データを深度画像に変換し、さらに画像処理で領域に分割する。
- * 分割された領域の一つ一つが検知物体となる。
- * 検知物体に距離、座標情報を追加してROSメッセージとしてパブリッシュする。
- * このクラスのメインとなる処理部
+ * - Convert the PC2 data to depth and RGB images
+ * - Exec obstacle detection
+ * - Publish objstacle information as ClassifiledObstacleArray
  *
- * @param[in] pc2 他のROSモジュール（主にセンサ）がpublishしたpointcloud2データ
- * @return なし
+ * @param[in] pc2 Organized PC2 data
+ * @return
  *
  * @else
  * @endif
@@ -130,15 +153,14 @@ void emulated_srs::ObstacleDetector::pc2Callback(
 {
   bool bret;
   int object_count;
-  std::vector<eSRS::ObstacleClassified> obstacle_classified;  //障害物検知データ用オブジェクト
+  std::vector<eSRS::ObstacleClassified> obstacle_classified;
 
-  ROS_INFO_ONCE("pointcloud received: %d %d", pc2->width, pc2->height);
+  ROS_INFO_ONCE("PC2 received: %d %d", pc2->width, pc2->height);
 
-  timestamp_pointcloud2_subscribed_ = ros::Time::now();
+  //timestamp_pointcloud2_subscribed_ = ros::Time::now();
 
   if(pc2->height <= 1 || pc2->width <= 1)
   {
-    // 高さまたは幅1のPC2(unorganized)は画像処理できないので却下
     ROS_WARN("An unorganized PC2 has subscribed: %d x %d", 
              pc2->width, pc2->height);
     return;
@@ -163,32 +185,34 @@ void emulated_srs::ObstacleDetector::pc2Callback(
   }
   ROS_INFO_ONCE("data conversion completed");
 
-  //マップデータにマスク処理を行う
+  // timestamp and frame_id
+  header_pointcloud2_ = pc2->header;
+
+  // apply masking to the depth MAP image
   setMaskToMapData();
   ROS_INFO_ONCE("masking completed");
 
-  //範囲外の値の色付け、マスク外範囲の色付けなどを行った表示用画像データを
-  //作成する
+  // make image for display
   map_for_detection_.normalize(map_for_showing_depth_data_);
   ROS_INFO_ONCE("showing data prepared");
 
-  //物体検出を実施
+  // exec obect detection
   object_count = execObstacleDetection();
   //map_for_detection_.display("Det", -1);
 
   ROS_INFO_ONCE("obstacle detection completed");
 
-  //検知・分類された物体のリストを取得
+  // make obstacle information for publishing
   map_for_detection_.getObstacleClassified(obstacle_classified);
 
   ROS_INFO_ONCE("list prepared");
 
   timestamp_detection_result_published_ = ros::Time::now();
 
-  // 表示用データの作成と表示。publishAllより先にcallすること
+  // exec displaying
   displayAll();
 
-  // 各種データのパブリッシュ
+  // exec publishing
   publishAll(obstacle_classified, object_count);
 
   ROS_INFO_ONCE("published");
@@ -232,6 +256,15 @@ void emulated_srs::ObstacleDetector::initializeMap(
   flg_initialized_p_ = true;
 
   return;
+}
+
+static std::string
+getLocalTimeString(ros::Time &rostime)
+{
+  UFV::Time tm(rostime.sec, rostime.nsec);
+  UFV::LocalTime ltm = getLocalTime(tm);;
+
+  return(getLocalTimeString(ltm));
 }
 
 /*!
@@ -578,7 +611,9 @@ int emulated_srs::ObstacleDetector::publishImagesMessage(void)
 
 /*!
  * @if jp
- * @brief 障害物検知結果を publish する。3D座標は、右手系、センサ原点、上がz、光軸がx
+ * @brief 障害物検知結果を publish する。
+ *        3D座標は、右手系、センサ原点、光軸がz、下がy
+ *        2D座標は、左上原点、右がx、下がy
  * @param[in] obstacle_classified 検知した障害物の情報
  * @param[in] object_count 検知した障害物の数
  * @note
@@ -624,25 +659,46 @@ int emulated_srs::ObstacleDetector::publishObstaclesMessage(
   const int object_count)
 {
   emulated_srs::ClassifiedObstacleArray obsmsgary;
+  std::string ifname = getLocalTimeString(header_pointcloud2_.stamp) + ".png";
 
   if (object_count <= 0)
   {
     emulated_srs::ClassifiedObstacle obsmsg;
 
     //obsmsg.stamp = timestamp_subscribe_pointcloud2_; // データsubscribe時刻
-    obsmsg.stamp = timestamp_detection_result_published_;
+    //obsmsg.stamp = timestamp_detection_result_published_;
+    obsmsg.header = header_pointcloud2_;
+    obsmsg.header.seq = count_detection_;
 
-    obsmsg.n = 0;
-    obsmsg.type = "none";
-    obsmsg.confidence = 0.0;
+    obsmsg.n = -1;
 
-    obsmsg.point.x = 0.0;
-    obsmsg.point.y = 0.0;
-    obsmsg.point.z = 0.0;
+    obsmsg.filname_saved = ifname;
 
-    obsmsg.scale.x = 0.0;
-    obsmsg.scale.y = 0.0;
-    obsmsg.scale.z = 0.0;
+    obsmsg.type_class = "none";
+    obsmsg.confidence_class = 0.0;
+
+    obsmsg.position_3D.x = 0.0;
+    obsmsg.position_3D.y = 0.0;
+    obsmsg.position_3D.z = 0.0;
+
+    obsmsg.dimensions_3D.x = 0.0;
+    obsmsg.dimensions_3D.y = 0.0;
+    obsmsg.dimensions_3D.z = 0.0;
+
+    obsmsg.centroid_3D.x = 0.0;
+    obsmsg.centroid_3D.y = 0.0;
+    obsmsg.centroid_3D.z = 0.0;
+
+    obsmsg.position_2D.x = 0.0;
+    obsmsg.position_2D.y = 0.0;
+
+    obsmsg.dimensions_2D.x = 0.0;
+    obsmsg.dimensions_2D.y = 0.0;
+
+    obsmsg.centroid_2D.x = 0.0;
+    obsmsg.centroid_2D.y = 0.0;
+
+    obsmsg.n_points = 0;
 
     obsmsgary.obstacles.push_back(obsmsg);
   }
@@ -653,19 +709,38 @@ int emulated_srs::ObstacleDetector::publishObstaclesMessage(
       emulated_srs::ClassifiedObstacle obsmsg;
 
       //obsmsg.stamp = timestamp_subscrib_pointcloud2_;
-      obsmsg.stamp = timestamp_detection_result_published_;
+      //obsmsg.stamp = timestamp_detection_result_published_;
+      obsmsg.header = header_pointcloud2_;
+      obsmsg.header.seq = count_detection_;
+
+      obsmsg.filname_saved = ifname;
 
       obsmsg.n = obstacle_classified[i].n;
-      obsmsg.type = obstacle_classified[i].classstr;
-      obsmsg.confidence = obstacle_classified[i].conf;
+      obsmsg.type_class = obstacle_classified[i].classstr;
+      obsmsg.confidence_class = obstacle_classified[i].conf;
 
-      obsmsg.point.x = obstacle_classified[i].bvol.z / 1000.0;
-      obsmsg.point.y = -obstacle_classified[i].bvol.x / 1000.0;
-      obsmsg.point.z = -obstacle_classified[i].bvol.y / 1000.0;
+      obsmsg.position_3D.x = obstacle_classified[i].bvol.x / 1000.0;
+      obsmsg.position_3D.y = obstacle_classified[i].bvol.y / 1000.0;
+      obsmsg.position_3D.z = obstacle_classified[i].bvol.z / 1000.0;
 
-      obsmsg.scale.x = obstacle_classified[i].bvol.depth / 1000.0;
-      obsmsg.scale.y = obstacle_classified[i].bvol.width / 1000.0;
-      obsmsg.scale.z = obstacle_classified[i].bvol.height / 1000.0;
+      obsmsg.dimensions_3D.x = obstacle_classified[i].bvol.width / 1000.0;
+      obsmsg.dimensions_3D.y = obstacle_classified[i].bvol.height / 1000.0;
+      obsmsg.dimensions_3D.z = obstacle_classified[i].bvol.depth / 1000.0;
+
+      obsmsg.centroid_3D.x = obstacle_classified[i].grv.x / 1000.0;
+      obsmsg.centroid_3D.y = obstacle_classified[i].grv.y / 1000.0;
+      obsmsg.centroid_3D.z = obstacle_classified[i].grv.z / 1000.0;
+
+      obsmsg.position_2D.x = obstacle_classified[i].bbox.x;
+      obsmsg.position_2D.y = obstacle_classified[i].bbox.y;
+
+      obsmsg.dimensions_2D.x = obstacle_classified[i].bbox.width;
+      obsmsg.dimensions_2D.y = obstacle_classified[i].bbox.height;
+
+      obsmsg.centroid_2D.x = obstacle_classified[i].grv.x;
+      obsmsg.centroid_2D.y = obstacle_classified[i].grv.y;
+
+      obsmsg.n_points = obstacle_classified[i].size;
 
       obsmsgary.obstacles.push_back(obsmsg);
     }
@@ -689,14 +764,13 @@ int emulated_srs::ObstacleDetector::publishMarkersMessage(
     const std::vector<eSRS::ObstacleClassified> &obs,
     const int nobs)
 {
-  int nmarker = marker_.size();
-  marker_.clear();
+  visualization_msgs::Marker marker;
+
+  marker.header = header_pointcloud2_;
+  marker.header.seq = count_detection_;
 
   for (int i = 0; i < nobs; i++)
   {
-    visualization_msgs::Marker marker;
-
-    marker.header.frame_id = "/camera_link";
     marker.ns = "basic_shapse";
     marker.id = i;
     marker.type = visualization_msgs::Marker::CUBE;
@@ -726,16 +800,12 @@ int emulated_srs::ObstacleDetector::publishMarkersMessage(
 
     publisher_marker_.publish(marker);
 
-    marker_.push_back(marker);
   }
 
   if (nmarker > nobs)
   {
     for (int i = nobs; i < nmarker; i++)
     {
-      visualization_msgs::Marker marker;
-
-      marker.header.frame_id = "/camera_link";
       marker.ns = "basic_shapse";
       marker.id = i;
       marker.type = visualization_msgs::Marker::CUBE;
