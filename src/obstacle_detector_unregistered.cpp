@@ -20,6 +20,7 @@
 #include <vector>
 #include <limits>
 
+#include <std_msgs/Header.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <cv_bridge/cv_bridge.h>
@@ -53,6 +54,7 @@ int main(int argc, char** argv)
 
 emulated_srs::ObstacleDetectorUnregistered::ObstacleDetectorUnregistered(void)
     :
+    count_detection_(0),
     param_zkey_(TC_OPT_THRESHOLD_ZKEY),
     param_gap_(TC_OPT_THRESHOLD_GAP),
     param_min_size_(TC_OPT_MIN_BLOBSIZE),
@@ -102,7 +104,7 @@ emulated_srs::ObstacleDetectorUnregistered::ObstacleDetectorUnregistered(void)
 
   ROS_INFO("publishers: OK");
 
-  timestamp_pointcloud2_subscribed_ = ros::Time::now();
+  //timestamp_pointcloud2_subscribed_ = ros::Time::now();
 
   subscriber_ = node_handle_.subscribe("/camera/depth/points", 1,
                                        &emulated_srs::ObstacleDetectorUnregistered::pc2Callback, this);
@@ -134,11 +136,10 @@ void emulated_srs::ObstacleDetectorUnregistered::pc2Callback(
 
   ROS_INFO_ONCE("pointcloud received: %d %d", pc2->width, pc2->height);
 
-  timestamp_pointcloud2_subscribed_ = ros::Time::now();
+  //timestamp_pointcloud2_subscribed_ = ros::Time::now();
 
   if(pc2->height <= 1 || pc2->width <= 1)
   {
-    // 高さまたは幅1のPC2(unorganized)は画像処理できないので却下
     ROS_WARN("An unorganized PC2 has subscribed: %d x %d", 
              pc2->width, pc2->height);
     return;
@@ -162,6 +163,9 @@ void emulated_srs::ObstacleDetectorUnregistered::pc2Callback(
     return;
   }
   ROS_INFO_ONCE("data conversion completed");
+
+  // timestamp and frame_id
+  header_pointcloud2_ = pc2->header;
 
   //マップデータにマスク処理を行う
   setMaskToMapData();
@@ -513,6 +517,15 @@ int emulated_srs::ObstacleDetectorUnregistered::publishImagesMessage(void)
   return UFV::OK;
 }
 
+static std::string
+getLocalTimeString(ros::Time &rostime)
+{
+  UFV::Time tm(rostime.sec, rostime.nsec);
+  UFV::LocalTime ltm = getLocalTime(tm);;
+
+  return(getLocalTimeString(ltm));
+}
+
 /*!
  * @if jp
  * @brief 障害物検知結果を publish する。3D座標は、右手系、センサ原点、上がz、光軸がx
@@ -561,13 +574,21 @@ int emulated_srs::ObstacleDetectorUnregistered::publishObstaclesMessage(
   const int object_count)
 {
   emulated_srs::ClassifiedObstacleArray obsmsgary;
+  std::string ifname = getLocalTimeString(header_pointcloud2_.stamp) + ".png";
 
   if (object_count <= 0)
   {
     emulated_srs::ClassifiedObstacle obsmsg;
 
     //obsmsg.stamp = timestamp_subscribe_pointcloud2_; // データsubscribe時刻
-    obsmsg.stamp = timestamp_detection_result_published_;
+    //obsmsg.stamp = timestamp_detection_result_published_;
+
+    obsmsg.header = header_pointcloud2_;
+    obsmsg.header.seq = count_detection_;
+
+    obsmsg.n = -1;
+
+    obsmsg.filename_saved = ifname;
 
     obsmsg.type_class = "none";
     obsmsg.confidence_class = 0.0;
@@ -595,8 +616,6 @@ int emulated_srs::ObstacleDetectorUnregistered::publishObstaclesMessage(
 
     obsmsg.n_points = 0;
 
-    obsmsg.filename_saved = "";
-
     obsmsgary.obstacles.push_back(obsmsg);
   }
   else
@@ -606,20 +625,13 @@ int emulated_srs::ObstacleDetectorUnregistered::publishObstaclesMessage(
       emulated_srs::ClassifiedObstacle obsmsg;
 
       //obsmsg.stamp = timestamp_subscrib_pointcloud2_;
-      obsmsg.stamp = timestamp_detection_result_published_;
+      //obsmsg.stamp = timestamp_detection_result_published_;
+      obsmsg.header = header_pointcloud2_;
+      obsmsg.header.seq = count_detection_;
+
+      obsmsg.filename_saved = ifname;
 
       obsmsg.n = obstacle_classified[i].n;
-      obsmsg.type = obstacle_classified[i].classstr;
-      obsmsg.confidence = obstacle_classified[i].conf;
-
-      obsmsg.point.x = obstacle_classified[i].bvol.z / 1000.0;
-      obsmsg.point.y = -obstacle_classified[i].bvol.x / 1000.0;
-      obsmsg.point.z = -obstacle_classified[i].bvol.y / 1000.0;
-
-      obsmsg.scale.x = obstacle_classified[i].bvol.depth / 1000.0;
-      obsmsg.scale.y = obstacle_classified[i].bvol.width / 1000.0;
-      obsmsg.scale.z = obstacle_classified[i].bvol.height / 1000.0;
-
       obsmsg.type_class = obstacle_classified[i].classstr;
       obsmsg.confidence_class = obstacle_classified[i].conf;
 
@@ -635,17 +647,16 @@ int emulated_srs::ObstacleDetectorUnregistered::publishObstaclesMessage(
       obsmsg.centroid_3D.y = obstacle_classified[i].grv.y / 1000.0;
       obsmsg.centroid_3D.z = obstacle_classified[i].grv.z / 1000.0;
 
-      obsmsg.position_2D.x = obstacle_classified[i].bbox.x / 1000.0;
-      obsmsg.position_2D.y = obstacle_classified[i].bbox.y / 1000.0;
+      obsmsg.position_2D.x = obstacle_classified[i].bbox.x;
+      obsmsg.position_2D.y = obstacle_classified[i].bbox.y;
 
-      obsmsg.dimensions_2D.x = obstacle_classified[i].bbox.width / 1000.0;
-      obsmsg.dimensions_2D.y = obstacle_classified[i].bbox.height / 1000.0;
+      obsmsg.dimensions_2D.x = obstacle_classified[i].bbox.width;
+      obsmsg.dimensions_2D.y = obstacle_classified[i].bbox.height;
 
-      obsmsg.centroid_2D.x = obstacle_classified[i].grv.x / 1000.0;
-      obsmsg.centroid_2D.y = obstacle_classified[i].grv.y / 1000.0;
+      obsmsg.centroid_2D.x = obstacle_classified[i].grv.x;
+      obsmsg.centroid_2D.y = obstacle_classified[i].grv.y;
 
       obsmsg.n_points = obstacle_classified[i].size;
-      obsmsg.filename_saved = "";
 
       obsmsgary.obstacles.push_back(obsmsg);
     }
@@ -669,34 +680,39 @@ int emulated_srs::ObstacleDetectorUnregistered::publishMarkersMessage(
     const std::vector<eSRS::ObstacleClassified> &obs,
     const int nobs)
 {
-  int nmarker = marker_.size();
-  marker_.clear();
+  visualization_msgs::Marker marker;
+
+  marker.header = header_pointcloud2_;
+  marker.header.seq = count_detection_;
 
   for (int i = 0; i < nobs; i++)
   {
-    visualization_msgs::Marker marker;
-
-    marker.header.frame_id = "/camera_link";
     marker.ns = "basic_shapse";
     marker.id = i;
     marker.type = visualization_msgs::Marker::CUBE;
     marker.action = visualization_msgs::Marker::ADD;
     marker.lifetime = ros::Duration();
     //marker.header.stamp = timestamp_subscrib_pointcloud2_;
-    marker.header.stamp = timestamp_detection_result_published_;
+    //marker.header.stamp = timestamp_detection_result_published_;
 
-    marker.pose.position.x = (obs[i].bvol.z + obs[i].bvol.depth / 2) / 1000.0;
-    marker.pose.position.y = -(obs[i].bvol.x + obs[i].bvol.width / 2) / 1000.0;
-    marker.pose.position.z = -(obs[i].bvol.y + obs[i].bvol.height / 2) / 1000.0;
+    marker.pose.position.z = (obs[i].bvol.z + obs[i].bvol.depth / 2) / 1000.0;
+    marker.pose.position.x = (obs[i].bvol.x + obs[i].bvol.width / 2) / 1000.0;
+    marker.pose.position.y = (obs[i].bvol.y + obs[i].bvol.height / 2) / 1000.0;
+    //marker.pose.position.x = (obs[i].bvol.z + obs[i].bvol.depth / 2) / 1000.0;
+    //marker.pose.position.y = -(obs[i].bvol.x + obs[i].bvol.width / 2) / 1000.0;
+    //marker.pose.position.z = -(obs[i].bvol.y + obs[i].bvol.height / 2) / 1000.0;
 
     marker.pose.orientation.x = 0.0;
     marker.pose.orientation.y = 0.0;
     marker.pose.orientation.z = 0.0;
     marker.pose.orientation.w = 1.0;
 
-    marker.scale.x = obs[i].bvol.depth / 1000.0;
-    marker.scale.y = obs[i].bvol.width / 1000.0;
-    marker.scale.z = obs[i].bvol.height / 1000.0;
+    marker.scale.z = obs[i].bvol.depth / 1000.0;
+    marker.scale.x = obs[i].bvol.width / 1000.0;
+    marker.scale.y = obs[i].bvol.height / 1000.0;
+    //marker.scale.x = obs[i].bvol.depth / 1000.0;
+    //marker.scale.y = obs[i].bvol.width / 1000.0;
+    //marker.scale.z = obs[i].bvol.height / 1000.0;
 
     UFV::Color ucolor = obs[i].color;
     marker.color.r = ucolor.r / 255.0;
@@ -709,6 +725,7 @@ int emulated_srs::ObstacleDetectorUnregistered::publishMarkersMessage(
     marker_.push_back(marker);
   }
 
+  /*
   if (nmarker > nobs)
   {
     for (int i = nobs; i < nmarker; i++)
@@ -724,6 +741,7 @@ int emulated_srs::ObstacleDetectorUnregistered::publishMarkersMessage(
       publisher_marker_.publish(marker);
     }
   }
-
+  */
+  
   return UFV::OK;
 }

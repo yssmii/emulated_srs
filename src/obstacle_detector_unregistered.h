@@ -117,6 +117,9 @@ private:
     void);
 
 protected:  
+  //! the number of the obstacle detection executions
+  unsigned int count_detection_;
+
   //! 障害物検知オブジェクト
   eSRS::ClassificationMap map_for_detection_;
   
@@ -150,8 +153,10 @@ private:
   //!距離画像データ用パブリッシャ
   image_transport::Publisher publisher_image_depth_;
 
-  //!pointcloud2をsubscribeしたときのタイムスタンプ
-  ros::Time timestamp_pointcloud2_subscribed_;
+  ros::Publisher publisher_exp_setup_; // experiment setup
+
+  //! header of subscribed PC2
+  std_msgs::Header header_pointcloud2_;
 
   //!検出結果をpublishしたときのタイムスタンプ
   ros::Time timestamp_detection_result_published_;

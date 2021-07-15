@@ -32,6 +32,7 @@
 #include <emulated_srs/ClassifiedObstacleArray.h>
 #include <emulated_srs/ExpSetup.h>
 
+#include "UFV/utils.h"
 #include "obstacle_detector.h"
 
 const float emulated_srs::ObstacleDetector::TC_OPT_THRESHOLD_ZKEY = 1500.0;
@@ -55,6 +56,7 @@ int main(int argc, char** argv)
 
 emulated_srs::ObstacleDetector::ObstacleDetector(void)
     :
+    count_detection_(0),
     param_zkey_(TC_OPT_THRESHOLD_ZKEY),
     param_gap_(TC_OPT_THRESHOLD_GAP),
     param_min_size_(TC_OPT_MIN_BLOBSIZE),
@@ -112,7 +114,7 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
 
   ROS_INFO("publishers: OK");
 
-  timestamp_pointcloud2_subscribed_ = ros::Time::now();
+  //timestamp_pointcloud2_subscribed_ = ros::Time::now();
 
   subscriber_ = node_handle_.subscribe("/camera/depth_registered/points", 1,
                                        &emulated_srs::ObstacleDetector::pc2Callback, this);
@@ -258,13 +260,13 @@ void emulated_srs::ObstacleDetector::initializeMap(
   return;
 }
 
-static std::string
-getLocalTimeString(ros::Time &rostime)
+std::string
+emulated_srs::ObstacleDetector::getLocalTimeString(ros::Time &rostime) const
 {
   UFV::Time tm(rostime.sec, rostime.nsec);
-  UFV::LocalTime ltm = getLocalTime(tm);;
+  UFV::LocalTime ltm = getLocalTime(tm);
 
-  return(getLocalTimeString(ltm));
+  return(UFV::getLocalTimeString(ltm));
 }
 
 /*!
@@ -672,7 +674,7 @@ int emulated_srs::ObstacleDetector::publishObstaclesMessage(
 
     obsmsg.n = -1;
 
-    obsmsg.filname_saved = ifname;
+    obsmsg.filename_saved = ifname;
 
     obsmsg.type_class = "none";
     obsmsg.confidence_class = 0.0;
@@ -713,7 +715,7 @@ int emulated_srs::ObstacleDetector::publishObstaclesMessage(
       obsmsg.header = header_pointcloud2_;
       obsmsg.header.seq = count_detection_;
 
-      obsmsg.filname_saved = ifname;
+      obsmsg.filename_saved = ifname;
 
       obsmsg.n = obstacle_classified[i].n;
       obsmsg.type_class = obstacle_classified[i].classstr;
@@ -777,20 +779,26 @@ int emulated_srs::ObstacleDetector::publishMarkersMessage(
     marker.action = visualization_msgs::Marker::ADD;
     marker.lifetime = ros::Duration();
     //marker.header.stamp = timestamp_subscrib_pointcloud2_;
-    marker.header.stamp = timestamp_detection_result_published_;
+    //marker.header.stamp = timestamp_detection_result_published_;
 
-    marker.pose.position.x = (obs[i].bvol.z + obs[i].bvol.depth / 2) / 1000.0;
-    marker.pose.position.y = -(obs[i].bvol.x + obs[i].bvol.width / 2) / 1000.0;
-    marker.pose.position.z = -(obs[i].bvol.y + obs[i].bvol.height / 2) / 1000.0;
+    marker.pose.position.z = (obs[i].bvol.z + obs[i].bvol.depth / 2) / 1000.0;
+    marker.pose.position.x = (obs[i].bvol.x + obs[i].bvol.width / 2) / 1000.0;
+    marker.pose.position.y = (obs[i].bvol.y + obs[i].bvol.height / 2) / 1000.0;
+    //marker.pose.position.x = (obs[i].bvol.z + obs[i].bvol.depth / 2) / 1000.0;
+    //marker.pose.position.y = -(obs[i].bvol.x + obs[i].bvol.width / 2) / 1000.0;
+    //marker.pose.position.z = -(obs[i].bvol.y + obs[i].bvol.height / 2) / 1000.0;
 
     marker.pose.orientation.x = 0.0;
     marker.pose.orientation.y = 0.0;
     marker.pose.orientation.z = 0.0;
     marker.pose.orientation.w = 1.0;
 
-    marker.scale.x = obs[i].bvol.depth / 1000.0;
-    marker.scale.y = obs[i].bvol.width / 1000.0;
-    marker.scale.z = obs[i].bvol.height / 1000.0;
+    marker.scale.z = obs[i].bvol.depth / 1000.0;
+    marker.scale.x = obs[i].bvol.width / 1000.0;
+    marker.scale.y = obs[i].bvol.height / 1000.0;
+    //marker.scale.x = obs[i].bvol.depth / 1000.0;
+    //marker.scale.y = obs[i].bvol.width / 1000.0;
+    //marker.scale.z = obs[i].bvol.height / 1000.0;
 
     UFV::Color ucolor = obs[i].color;
     marker.color.r = ucolor.r / 255.0;
@@ -802,6 +810,7 @@ int emulated_srs::ObstacleDetector::publishMarkersMessage(
 
   }
 
+  /*
   if (nmarker > nobs)
   {
     for (int i = nobs; i < nmarker; i++)
@@ -814,6 +823,7 @@ int emulated_srs::ObstacleDetector::publishMarkersMessage(
       publisher_marker_.publish(marker);
     }
   }
-
+  */
+  
   return UFV::OK;
 }

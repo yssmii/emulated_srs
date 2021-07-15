@@ -119,6 +119,9 @@ private:
   int publishImagesMessage(
     void);
 
+public:
+  std::string getLocalTimeString(ros::Time &rostime) const;
+
 protected:
   //! the number of the obstacle detection executions
   unsigned int count_detection_;
@@ -162,8 +165,8 @@ private:
 
   ros::Publisher publisher_exp_setup_; // experiment setup
 
-  //! timestamp of subscribed PC2
-  ros::std_msgs::Header header_pointcloud2_;
+  //! header of subscribed PC2
+  std_msgs::Header header_pointcloud2_;
 
   //! timestamp when publishing obstacle data
   ros::Time timestamp_detection_result_published_;
