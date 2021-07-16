@@ -1,12 +1,6 @@
-std_msgs/Header header
 int32 n
-geometry_msgs/Point32 position_3D
-geometry_msgs/Point32 dimensions_3D
-geometry_msgs/Point32 centroid_3D
-ImageCoord32 position_2D
-ImageCoord32 dimensions_2D
-ImageCoord32 centroid_2D
-int32 n_points
-string filename_saved
-string type_class
-float32 confidence_class
+time stamp
+string type
+geometry_msgs/Point32 point
+geometry_msgs/Point32 scale
+float32 confidence

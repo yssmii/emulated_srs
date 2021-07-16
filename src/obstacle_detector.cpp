@@ -28,8 +28,8 @@
 #include <visualization_msgs/Marker.h>
 #include <opencv2/core.hpp>
 
-#include <emulated_srs/ClassifiedObstacle.h>
-#include <emulated_srs/ClassifiedObstacleArray.h>
+#include <emulated_srs/Obstacle.h>
+//#include <emulated_srs/ClassifiedObstacleArray.h>
 #include <emulated_srs/ExpSetup.h>
 
 #include "UFV/utils.h"
@@ -66,6 +66,10 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
     param_publish_images_p_(0),
     param_publish_markers_p_(0),
     param_experimental_doublecheck_p_(false),
+    param_name_sensor_("D435"),
+    param_fname_mask_("MASK.png"),
+    param_fname_region_("REG.png"),
+    param_dist_testpiece_(-1.0),
     flg_initialized_p_(false),
     node_handle_("~"),
     image_transport_(node_handle_)
@@ -73,6 +77,8 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
   int param_doublecheck=0;
   
   // Get from .launch
+  node_handle_.getParam("sensor_name", param_name_sensor_);
+  
   node_handle_.getParam("zkey", param_zkey_);
   node_handle_.getParam("min_gap_of_occluding_boundary", param_gap_);
   node_handle_.getParam("min_pixels_as_object", param_min_size_);
@@ -82,6 +88,10 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
   node_handle_.getParam("publish_images_p", param_publish_images_p_);
   node_handle_.getParam("publish_markers_p", param_publish_markers_p_);
   node_handle_.getParam("experimental_doublecheck_p", param_doublecheck);
+
+  node_handle_.getParam("filename_mask", param_fname_mask_);
+  node_handle_.getParam("filename_region", param_fname_region_);
+  node_handle_.getParam("dist_testpiece", param_dist_testpiece_);
 
   // print them on the console for confirmation
   ROS_INFO("zkey: %f", param_zkey_);
@@ -97,36 +107,36 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
 
   // publishers and subscribers
   publisher_marker_ = node_handle_.advertise<visualization_msgs::Marker>(
-      "/emulated_srs/visualization_marker", 1);
+      "/emulated_srs/visualization_marker", 1000);
 
-  publisher_obstacle_ = node_handle_.advertise<emulated_srs::ClassifiedObstacleArray>(
-      "/emulated_srs/obstacles", 1);
+  publisher_obstacle_ = node_handle_.advertise<emulated_srs::Obstacle>(
+      "/emulated_srs/obstacle", 1000);
 
   publisher_image_depth_ = image_transport_.advertise(
-      "/emulated_srs/depth/image_raw", 1);
+      "/emulated_srs/depth/image_raw", 10);
 
   publisher_image_rgb_ = image_transport_.advertise(
-      "/emulated_srs/color/image_raw", 1);
+      "/emulated_srs/color/image_raw", 10);
 
   publisher_exp_setup_ =
     node_handle_.advertise<emulated_srs::ExpSetup>(
-      "/emulated_srs/experiment_setup", 1, true); // enable latch
+      "/emulated_srs/setup_experiment", 1, true); // enable latch
 
   ROS_INFO("publishers: OK");
 
   //timestamp_pointcloud2_subscribed_ = ros::Time::now();
 
-  subscriber_ = node_handle_.subscribe("/camera/depth_registered/points", 1,
+  subscriber_ = node_handle_.subscribe("/camera/depth_registered/points", 10,
                                        &emulated_srs::ObstacleDetector::pc2Callback, this);
 
   ROS_INFO("subscriber: OK");
 
   // publish the experimental setup as a latch topic
   emulated_srs::ExpSetup exp_setup;
-  exp_setup.name_sensor = "D435";
-  exp_setup.dist_testpiece = -1.0;
-  exp_setup.fname_mask = "MASK.png";
-  exp_setup.fname_region = "Reg.png";
+  exp_setup.name_sensor = param_name_sensor_;
+  exp_setup.dist_testpiece = param_dist_testpiece_;
+  exp_setup.fname_mask = param_fname_mask_;
+  exp_setup.fname_region = param_fname_region_;
   exp_setup.param_zkey = param_zkey_;
   exp_setup.param_min_gap = param_gap_;
   exp_setup.param_min_size = param_min_size_;
@@ -142,7 +152,7 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
  *
  * - Convert the PC2 data to depth and RGB images
  * - Exec obstacle detection
- * - Publish objstacle information as ClassifiledObstacleArray
+ * - Publish objstacle information as ClassifiledObstacle
  *
  * @param[in] pc2 Organized PC2 data
  * @return
@@ -531,7 +541,8 @@ bool emulated_srs::ObstacleDetector::createDepthMapAndRGBMap(
 int emulated_srs::ObstacleDetector::execObstacleDetection(void)
 {
   int object_count = map_for_detection_.detect();
-
+  count_detection_++;
+  
   return object_count;
 }
 
@@ -660,12 +671,12 @@ int emulated_srs::ObstacleDetector::publishObstaclesMessage(
   const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
   const int object_count)
 {
-  emulated_srs::ClassifiedObstacleArray obsmsgary;
+  //emulated_srs::ClassifiedObstacleArray obsmsgary;
   std::string ifname = getLocalTimeString(header_pointcloud2_.stamp) + ".png";
 
   if (object_count <= 0)
   {
-    emulated_srs::ClassifiedObstacle obsmsg;
+    emulated_srs::Obstacle obsmsg;
 
     //obsmsg.stamp = timestamp_subscribe_pointcloud2_; // データsubscribe時刻
     //obsmsg.stamp = timestamp_detection_result_published_;
@@ -702,18 +713,20 @@ int emulated_srs::ObstacleDetector::publishObstaclesMessage(
 
     obsmsg.n_points = 0;
 
-    obsmsgary.obstacles.push_back(obsmsg);
+    publisher_obstacle_.publish(obsmsg);
+    //obsmsgary.obstacles.push_back(obsmsg);
   }
   else
   {
     for (int i = 0; i < object_count; i++)
     {
-      emulated_srs::ClassifiedObstacle obsmsg;
+      emulated_srs::Obstacle obsmsg;
 
       //obsmsg.stamp = timestamp_subscrib_pointcloud2_;
       //obsmsg.stamp = timestamp_detection_result_published_;
       obsmsg.header = header_pointcloud2_;
-      obsmsg.header.seq = count_detection_;
+      //obsmsg.header.seq = count_detection_;
+      obsmsg.header.seq = 0;
 
       obsmsg.filename_saved = ifname;
 
@@ -744,11 +757,12 @@ int emulated_srs::ObstacleDetector::publishObstaclesMessage(
 
       obsmsg.n_points = obstacle_classified[i].size;
 
-      obsmsgary.obstacles.push_back(obsmsg);
+      publisher_obstacle_.publish(obsmsg);
+      //obsmsgary.obstacles.push_back(obsmsg);
     }
   }
 
-  publisher_obstacle_.publish(obsmsgary);
+  //publisher_obstacle_.publish(obsmsgary);
 
   return UFV::OK;
 }
@@ -804,7 +818,7 @@ int emulated_srs::ObstacleDetector::publishMarkersMessage(
     marker.color.r = ucolor.r / 255.0;
     marker.color.g = ucolor.g / 255.0;
     marker.color.b = ucolor.b / 255.0;
-    marker.color.a = 1.0;
+    marker.color.a = 0.5;
 
     publisher_marker_.publish(marker);
 

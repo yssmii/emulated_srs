@@ -13,9 +13,12 @@
 
   <arg name="record_p" default="0" />
 
-  <arg name="detection_fps" default="4" />
+  <arg name="detection_fps" default="1" />
 
   <arg name="sensor_name" default="D435" />
+  <arg name="filename_mask" default="MASK.png" />
+  <arg name="filename_region" default="REG.png" />
+  <arg name="dist_testpiece" default="-1.0" />
   
   <group ns="sensing_unit">
     <group if="$(eval sensor_name=='D435')">
@@ -38,19 +41,27 @@
  
     <node name="throttle" pkg="topic_tools" type="throttle"
           args="messages /sensing_unit/camera/depth_registered/points
-                $(arg _fps)
+                $(arg detection_fps)
                 /processing_unit/throttle/depth_registered/points" />
     
     <node name="obstacle_detector" pkg="emulated_srs" type="obstacle_detector"
 	  output="screen" cwd="node">
       <remap from="/camera/depth_registered/points"
              to="/processing_unit/throttle/depth_registered/points" />
+      
+      <param name="sensor_name" value="$(arg sensor_name)" />
+
       <param name="zkey" value="$(arg zkey)" />
       <param name="min_gap_of_occluding_boundary"
 	     value="$(arg min_gap_of_occluding_boundary)" />
       <param name="min_pixels_as_object" value="$(arg min_pixels_as_object)" />
       <param name="min_overlap_rate" value="$(arg min_overlap_rate)" />
+
       <param name="use_mask_p" value="$(arg use_mask_p)" />
+      <param name="filename_mask" value="$(arg filename_mask)" />
+      <param name="filename_region" value="$(arg filename_region)" />
+      <param name="dist_testpiece" value="$(arg dist_testpiece)" />
+      
       <param name="display_images_p" value="$(arg display_images_p)" />
       <param name="publish_images_p" value="$(arg publish_images_p)" />
       <param name="publish_markers_p" value="$(arg publish_markers_p)" />
@@ -61,7 +72,8 @@
             args="-o $(env PWD)/$(arg sensor_name)
                   --split --size=4000
                   /camera/depth_registered/points
-                  /emulated_srs/obstacles
+                  /emulated_srs/obstacle
+                  /emulated_srs/setup_experiment
                   /tf /tf_static">
             <remap from="/camera/depth_registered/points"
                    to="/processing_unit/throttle/depth_registered/points" />

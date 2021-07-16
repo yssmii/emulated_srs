@@ -84,8 +84,9 @@ add_message_files(
   #Point2D32.msg
   ImageCoord32.msg
   #ICor32.msg
-  ClassifiedObstacle.msg
-  ClassifiedObstacleArray.msg
+  #ClassifiedObstacle.msg
+  #ClassifiedObstacleArray.msg
+  Obstacle.msg
   ExpSetup.msg
   )
 

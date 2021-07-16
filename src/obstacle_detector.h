@@ -147,6 +147,12 @@ protected:
   int param_publish_markers_p_;
   bool param_experimental_doublecheck_p_;
 
+  //! parameters on experimetal setup
+  std::string param_name_sensor_;
+  std::string param_fname_mask_;
+  std::string param_fname_region_;
+  float param_dist_testpiece_;
+
   //! set true after the 1st subscription of PC2
   bool flg_initialized_p_;
 
