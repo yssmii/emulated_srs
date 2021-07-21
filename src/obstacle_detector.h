@@ -70,6 +70,14 @@ protected:
   virtual void initializeMap(const int width,
                              const int height);
 
+  virtual int execObstacleDetection(void);
+
+  virtual void displayAll(void);
+  
+  virtual void publishAll(
+    const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
+    const int object_count);
+
 private:
   //!点群データをサブスクライブした際に呼び出されるコールバック関数
   void pc2Callback(
@@ -96,14 +104,6 @@ private:
     const unsigned long rgba_offset);
 
   void setMaskToMapData(void);
-
-  virtual int execObstacleDetection(void);
-
-  virtual void displayAll(void);
-  
-  void publishAll(
-    const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
-    const int object_count);
 
   //!rvizでの表示用にMarkerとしてpublishする
   int publishMarkersMessage(

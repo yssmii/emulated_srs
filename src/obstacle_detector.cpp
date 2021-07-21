@@ -577,17 +577,18 @@ void emulated_srs::ObstacleDetector::displayAll(void)
 {
   if(!(param_display_images_p_ || param_publish_images_p_)) return;
   
-  // 輝度画像を表示
-  //map_for_showing_image_data_ = *(map_for_classification_.getImageData<unsigned char>());
+  // Copy the current RGB image.
   map_for_showing_rgb_data_ = *(map_for_rgb_display_.getImageData<unsigned char>());
 
-  //深度画像に枠と分類情報をオーバーライド(この時点で分類作業が終わり、オブジェクトに情報を渡していること)
+  // Overwrite the depth image with the obstacle reasons.
   map_for_detection_.drawObstacleRegion(map_for_showing_depth_data_);
-  //map_for_classification_.drawBoundingBox(map_for_showing_image_data_);
+
+  // Draw the bounding boxes for the obstacles on the RGB image.
   map_for_detection_.drawBoundingBox(map_for_showing_rgb_data_);
 
   if (param_display_images_p_)
   {
+    // Display the images.
     map_for_showing_rgb_data_.display("RGB", 10);
     map_for_showing_depth_data_.display("Depth", 10);
   }
