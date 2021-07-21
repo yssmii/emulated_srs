@@ -68,7 +68,7 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
     param_experimental_doublecheck_p_(false),
     param_name_sensor_("D435"),
     param_fname_mask_("MASK.png"),
-    param_fname_region_("REG.png"),
+    //param_fname_region_("REG.png"),
     param_dist_testpiece_(-1.0),
     flg_initialized_p_(false),
     node_handle_("~"),
@@ -90,7 +90,7 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
   node_handle_.getParam("experimental_doublecheck_p", param_doublecheck);
 
   node_handle_.getParam("filename_mask", param_fname_mask_);
-  node_handle_.getParam("filename_region", param_fname_region_);
+  //node_handle_.getParam("filename_region", param_fname_region_);
   node_handle_.getParam("dist_testpiece", param_dist_testpiece_);
 
   // print them on the console for confirmation
@@ -135,8 +135,9 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
   emulated_srs::ExpSetup exp_setup;
   exp_setup.name_sensor = param_name_sensor_;
   exp_setup.dist_testpiece = param_dist_testpiece_;
-  exp_setup.fname_mask = param_fname_mask_;
-  exp_setup.fname_region = param_fname_region_;
+  exp_setup.fname_mask = param_use_mask_p_ ? param_fname_mask_ : "";
+  //exp_setup.fname_region = param_fname_region_;
+  exp_setup.fname_region = "";
   exp_setup.param_zkey = param_zkey_;
   exp_setup.param_min_gap = param_gap_;
   exp_setup.param_min_size = param_min_size_;
@@ -623,49 +624,48 @@ int emulated_srs::ObstacleDetector::publishImagesMessage(void)
 }
 
 /*!
- * @if jp
- * @brief 障害物検知結果を publish する。
- *        3D座標は、右手系、センサ原点、光軸がz、下がy
- *        2D座標は、左上原点、右がx、下がy
- * @param[in] obstacle_classified 検知した障害物の情報
- * @param[in] object_count 検知した障害物の数
+ * @brief Publish obstacle detection results.
+ *          - 3D coord-sys: Right-handed, sensor orig, optic-axis:z, down:y
+ *          - 2D coord-sys: upper-left orig, right:x, down:y
+ * @param[in] obstacle_classified      detected obstacles
+ * @param[in] object_count             number of the obstacles
  * @note
- * rostopic echo /emulated_srs/obstacles のサンプル
+ * rostopic echo -n 1 /emulated_srs/obstacle
  * <PRE>
+ * header: 
+ *   seq: 0
+ *   stamp:                               # time of PC2 data acquired
+ *     secs: 1626834032
+ *     nsecs:  49269199
+ *   frame_id: "camera_color_optical_frame"
+ * n: 0                                   # obstacle number
+ * position_3D:                           # at front, upper, left vertex
+ *   x: -0.060076452791690826             #    of the bounding cuboid
+ *   y: -0.02606579288840294
+ *   z: 1.2140001058578491
+ * dimensions_3D:                         # of the bounding cuboid
+ *   x: 0.23947076499462128
+ *   y: 0.6017187237739563
+ *   z: 0.28299999237060547
+ * centroid_3D:                           # of the points
+ *   x: 0.060652490705251694              # NOT of the bounding cuboid
+ *   y: 0.197583869099617
+ *   z: 1.2704710960388184
+ * position_2D:                           # of the bounding box
+ *   x: 301.0
+ *   y: 228.0
+ * dimensions_2D:                         # of the bounding box
+ *   x: 115.0
+ *   y: 251.0
+ * centroid_2D:                           # of the points
+ *   x: 60.65249252319336
+ *   y: 197.5838623046875
+ * n_points: 19902                        # number of the points
+ * filename_saved: "20210721_112032_49269199.png"
+ * type_class: "unknown"
+ * confidence_class: 0.0
  * ---
- * obstacles: 
- *   - 
- *     n: 0                              // 通し番号
- *     stamp:                            // データpublish時のタイムスタンプ
- *       secs: 1569300407
- *       nsecs: 309263605
- *     type: "person"                    // Yoloによる認識結果
- *     point:                            // 外接直方体の左上手前の点の座標
- *       x: 0.51700001955
- *       y: 0.0526745580137
- *       z: 0.309713751078
- *     scale:                            // 外接直方体の寸法
- *       x: 0.427000075579
- *       y: 0.487814188004
- *       z: 0.640797376633
- *    confidence: 0.999856948853         // Yoloによる認識の信頼性
- *   - 
- *     n: 1
- *     stamp: 
- *       secs: 1569300407
- *       nsecs: 309263605
- *     type: "unknown"
- *     point: 
- *       x: 1.44900012016
- *       y: 0.799512386322
- *       z: 0.294261574745
- *     scale: 
- *       x: 0.0489998795092
- *       y: 0.0868123173714
- *       z: 0.0640079528093
- *     confidence: 0.0
  * </PRE>
- * @endif
  */
 int emulated_srs::ObstacleDetector::publishObstaclesMessage(
   const std::vector<eSRS::ObstacleClassified> &obstacle_classified,

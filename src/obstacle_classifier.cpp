@@ -60,6 +60,7 @@ int emulated_srs::ObstacleClassifier::execObstacleDetection(void)
 
   //AIによる物体分類を行う
   map_for_classification_.detect();
+  count_detection_++;
 
   //分類を行ったデータラベルの取得
   std::vector<eSRS::YoloObject> yobjs;

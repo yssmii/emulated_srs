@@ -150,7 +150,7 @@ protected:
   //! parameters on experimetal setup
   std::string param_name_sensor_;
   std::string param_fname_mask_;
-  std::string param_fname_region_;
+  //std::string param_fname_region_;
   float param_dist_testpiece_;
 
   //! set true after the 1st subscription of PC2
