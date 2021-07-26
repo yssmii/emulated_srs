@@ -68,7 +68,11 @@ public:
 
 protected:  
   virtual void initializeMap(const int width,
-                             const int height);
+                             const int height,
+                             const int point_step);
+  virtual void reshapeMap(const int width,
+                          const int height,
+                          const int point_step);
 
   virtual int execObstacleDetection(void);
 
@@ -123,7 +127,13 @@ public:
   std::string getLocalTimeString(ros::Time &rostime) const;
 
 protected:
-  //! the number of the obstacle detection executions
+  //! param for the name of topic to subscribe to
+  std::string param_name_topic_;
+  
+  //! true, if the subscribed PC2 has RGB information, 
+  bool has_rgb_data_;
+  
+  //! number of the obstacle detection executions
   unsigned int count_detection_;
   
   //! instance for the obstacle detection

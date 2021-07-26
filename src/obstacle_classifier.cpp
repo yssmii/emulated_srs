@@ -35,7 +35,7 @@ void emulated_srs::ObstacleClassifier::initializeMap(
   const int width,
   const int height)
 {
-  this->emulated_srs::ObstacleDetector::initializeMap(width,height);
+  this->emulated_srs::ObstacleDetector::initializeMap(width, height, 32);
 
   map_for_classification_.reshape(width, height);
   ROS_INFO_ONCE("YoloMapMask");

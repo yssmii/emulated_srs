@@ -35,7 +35,8 @@ public:
 
 private:
   void initializeMap(const int width,
-                     const int height);
+                     const int height,
+                     const int point_step);
   int execObstacleDetection(void);
   void displayAll(void);
 

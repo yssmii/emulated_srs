@@ -33,9 +33,10 @@ int main(int argc, char** argv)
 
 void emulated_srs::ObstacleMeasurer::initializeMap(
   const int width,
-  const int height)
+  const int height,
+  const int point_step)
 {
-  this->emulated_srs::ObstacleDetector::initializeMap(width,height);
+  this->emulated_srs::ObstacleDetector::initializeMap(width,height,point_step);
 
   return;
 }

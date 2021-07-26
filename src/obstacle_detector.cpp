@@ -56,6 +56,8 @@ int main(int argc, char** argv)
 
 emulated_srs::ObstacleDetector::ObstacleDetector(void)
     :
+    param_name_topic_("/camera/depth_registered/points"),
+    has_rgb_data_(true),
     count_detection_(0),
     param_zkey_(TC_OPT_THRESHOLD_ZKEY),
     param_gap_(TC_OPT_THRESHOLD_GAP),
@@ -77,6 +79,7 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
   int param_doublecheck=0;
   
   // Get from .launch
+  node_handle_.getParam("topic_name", param_name_topic_);
   node_handle_.getParam("sensor_name", param_name_sensor_);
   
   node_handle_.getParam("zkey", param_zkey_);
@@ -94,6 +97,10 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
   node_handle_.getParam("dist_testpiece", param_dist_testpiece_);
 
   // print them on the console for confirmation
+  ROS_INFO("topic to subscribe to: %s", param_name_topic_);
+  ROS_INFO("sensor: %s", param_name_sensor_);
+
+  ROS_INFO("zkey: %f", param_zkey_);
   ROS_INFO("zkey: %f", param_zkey_);
   ROS_INFO("min_gap_of_occluding_boundary: %f", param_gap_);
   ROS_INFO("min_pixels_as_object: %d", param_min_size_);
@@ -126,7 +133,7 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
 
   //timestamp_pointcloud2_subscribed_ = ros::Time::now();
 
-  subscriber_ = node_handle_.subscribe("/camera/depth_registered/points", 10,
+  subscriber_ = node_handle_.subscribe(param_name_topic_, 10,
                                        &emulated_srs::ObstacleDetector::pc2Callback, this);
 
   ROS_INFO("subscriber: OK");
@@ -179,13 +186,21 @@ void emulated_srs::ObstacleDetector::pc2Callback(
     return;
   }
 
+  if(pc2->point_step != 32 && pc2->point_step != 16)
+  {
+    ROS_WARN("Unsupported point_step: %d", 
+             pc2->point_step);
+    return;
+  }
+
   // Mapオブジェクトの初期化と初期設定を行う。
   // このコールバック関数で初めてサブスクライブした
   // 画像のサイズがわかるため、このタイミングで初期化が必要
   if (flg_initialized_p_ == false)
   {
-    initializeMap(pc2->width, pc2->height);
-    ROS_INFO_ONCE("initialize completed");
+    initializeMap(pc2->width, pc2->height, pc2->point_step);
+    ROS_INFO_ONCE("initialize completed: %d x %d (%d)",
+                  pc2->width, pc2->height, pc2->point_step);
   }
 
   //pointcloud2からデータを抜き取り画像データ深度画像とrgb画像を作る。
@@ -245,17 +260,10 @@ void emulated_srs::ObstacleDetector::pc2Callback(
  */
 void emulated_srs::ObstacleDetector::initializeMap(
   const int width,
-  const int height)
+  const int height,
+  const int point_step)
 {
-  map_for_rgb_display_.reshape(width, height);
-  ROS_INFO_ONCE("IntensityMapMask");
-
-  map_for_detection_.reshape(width, height);
-  ROS_INFO_ONCE("ClassificationMap");
-
-  map_for_showing_depth_data_.reshape(width, height, IMAGE_N_CHANNELS);  
-  map_for_showing_rgb_data_.reshape(width, height, IMAGE_N_CHANNELS);  
-  ROS_INFO_ONCE("reshape");
+  this->reshapeMap(width, height, point_step);
 
   map_for_detection_.setZkey(param_zkey_);                  // mm
   map_for_detection_.setMinGap(param_gap_);                 // mm
@@ -268,6 +276,40 @@ void emulated_srs::ObstacleDetector::initializeMap(
 
   flg_initialized_p_ = true;
 
+  return;
+}
+
+void emulated_srs::ObstacleDetector::reshapeMap(
+  const int width,
+  const int height,
+  const int point_step)
+{
+  if(map_for_detection_.width() == width &&
+     map_for_detection_.height() == height &&
+     (has_rgb_data_ && (point_step == 32)))
+  {
+    return;
+  }
+
+  has_rgb_data_ = false;
+  
+  if(point_step == 32)
+  {
+    map_for_rgb_display_.reshape(width, height);
+    ROS_INFO_ONCE("IntensityMapMask");
+    has_rgb_data_ = true;
+  }
+
+  map_for_detection_.reshape(width, height);
+  ROS_INFO_ONCE("ClassificationMap");
+
+  map_for_showing_depth_data_.reshape(width, height, IMAGE_N_CHANNELS);  
+  if(point_step == 32)
+  {
+    map_for_showing_rgb_data_.reshape(width, height, IMAGE_N_CHANNELS);
+  }
+  ROS_INFO_ONCE("reshape");
+  
   return;
 }
 
@@ -299,10 +341,16 @@ bool emulated_srs::ObstacleDetector::convertPC2ToMapData(
   unsigned long rgb_offset;
   bool result;
 
+  // reshape Maps, if necessary
+  reshapeMap(point_cloud2->width, point_cloud2->height,
+             point_cloud2->point_step);
+
   //pointcloud2メッセージからx,y,z,rgbの情報が保存されている配列のオフセット情報を取り出す
   result = retrievePC2OffsetInfomation(point_cloud2,
                                        x_offset, y_offset, z_offset,
                                        rgb_offset);
+  ROS_INFO_ONCE("offsets: %d %d %d, %d",
+                x_offset, y_offset, z_offset, rgb_offset);
   if(result == false)
   {
     return result;
@@ -335,12 +383,15 @@ void emulated_srs::ObstacleDetector::setMaskToMapData()
     map_for_detection_.mask();
   }
 
-  //ret = map_for_classification_.hasMaskImage();
-  ret = map_for_rgb_display_.hasMaskImage();
-  if (ret == true)
+  if(has_rgb_data_)
   {
-    //map_for_classification_.mask();
+    //ret = map_for_classification_.hasMaskImage();
+    ret = map_for_rgb_display_.hasMaskImage();
+    if (ret == true)
+    {
+      //map_for_classification_.mask();
     map_for_rgb_display_.mask();
+    }
   }
 
   return;
@@ -434,8 +485,7 @@ bool emulated_srs::ObstacleDetector::retrievePC2OffsetInfomation(
   //check
   if ((x_offset == 0xFFFFFFFF) ||
       (y_offset == 0xFFFFFFFF) ||
-      (z_offset == 0xFFFFFFFF) ||
-      (rgb_offset == 0xFFFFFFFF))
+      (z_offset == 0xFFFFFFFF))
   {
     ROS_ERROR("Unsupported PC2. No offset data.");
     return false;
@@ -486,19 +536,34 @@ bool emulated_srs::ObstacleDetector::createDepthMapAndRGBMap(
   y_dep = map_for_detection_.ydata();
   z_dep = map_for_detection_.data();
 
-  //i_map = map_for_classification_.getData<unsigned char>();
-  i_map = map_for_rgb_display_.getData<unsigned char>();
-
   pc2data = pc2->data.data();                            //pointcloud2にある生データ配列の先頭ポインタ
   point_step = pc2->point_step;                          //pointcloud2にある生データ配列の1データブロックあたりのサイズ
   pc2_data_size = pc2->width * pc2->height * point_step; //pointcloud2にある生データ配列のサイズ
 
-  //|x1|y1|z1|n|rgba1|nn|x2|y2|z2|n|rgba2|nn|x3|y3|z3|・・・
-  //↑処理前 ↓処理後
-  //|x1|x2|x3|・・・
-  //|y1|y2|y3|・・・
-  //|z1|z2|z3|・・・
-  //|r1|g1|b1|r2|g2|b2|r3|g3|b3|・・・
+  if(point_step == 32) // point_step:32 -> xyzrgb, 16->xyz
+  {
+    //i_map = map_for_classification_.getData<unsigned char>();
+    i_map = map_for_rgb_display_.getData<unsigned char>();
+  }
+
+  /*!
+   * * point_step: 32
+   *   - berore
+   *       |x1|y1|z1|n|rgba1|nn|x2|y2|z2|n|rgba2|nn|x3|y3|z3|・・・
+   *   - after
+   *       |x1|x2|x3|・・・
+   *       |y1|y2|y3|・・・
+   *       |z1|z2|z3|・・・
+   *       |r1|g1|b1|r2|g2|b2|r3|g3|b3|・・・
+   *
+   * * point_step: 16
+   *   - berore
+   *       |x1|y1|z1|nx2|y2|z2|n|x3|y3|z3|・・・
+   *   - after
+   *       |x1|x2|x3|・・・
+   *       |y1|y2|y3|・・・
+   *       |z1|z2|z3|・・・
+   */
   map_idx = 0;
   for (int i = 0; i < pc2_data_size; i += point_step)
   {
@@ -522,10 +587,13 @@ bool emulated_srs::ObstacleDetector::createDepthMapAndRGBMap(
       z_dep[map_idx] *= 1000;
     }
 
-    //rgba処理(aは処理しない)
-    i_map[(map_idx * 3)] = pc2data[(i + rgba_offset)];         //r
-    i_map[(map_idx * 3) + 1] = pc2data[(i + rgba_offset) + 1]; //g
-    i_map[(map_idx * 3) + 2] = pc2data[(i + rgba_offset) + 2]; //b
+    if(point_step == 32) // point_step:32 -> xyzrgb, 16->xyz
+    {
+      //rgba処理(aは処理しない)
+      i_map[(map_idx * 3)] = pc2data[(i + rgba_offset)];         //r
+      i_map[(map_idx * 3) + 1] = pc2data[(i + rgba_offset) + 1]; //g
+      i_map[(map_idx * 3) + 2] = pc2data[(i + rgba_offset) + 2]; //b
+    }
 
     map_idx++;
   } //loopend
@@ -576,20 +644,29 @@ void emulated_srs::ObstacleDetector::publishAll(
 void emulated_srs::ObstacleDetector::displayAll(void)
 {
   if(!(param_display_images_p_ || param_publish_images_p_)) return;
-  
-  // Copy the current RGB image.
-  map_for_showing_rgb_data_ = *(map_for_rgb_display_.getImageData<unsigned char>());
+
+  if(has_rgb_data_)
+  {
+    // Copy the current RGB image.
+    map_for_showing_rgb_data_ = *(map_for_rgb_display_.getImageData<unsigned char>());
+  }
 
   // Overwrite the depth image with the obstacle reasons.
   map_for_detection_.drawObstacleRegion(map_for_showing_depth_data_);
 
   // Draw the bounding boxes for the obstacles on the RGB image.
-  map_for_detection_.drawBoundingBox(map_for_showing_rgb_data_);
+  if(has_rgb_data_)
+  {
+    map_for_detection_.drawBoundingBox(map_for_showing_rgb_data_);
+  }
 
   if (param_display_images_p_)
   {
     // Display the images.
-    map_for_showing_rgb_data_.display("RGB", 10);
+    if(has_rgb_data_)
+    {
+      map_for_showing_rgb_data_.display("RGB", 10);
+    }
     map_for_showing_depth_data_.display("Depth", 10);
   }
 
@@ -606,13 +683,16 @@ int emulated_srs::ObstacleDetector::publishImagesMessage(void)
 {
   sensor_msgs::ImagePtr msg;
 
-  cv::Size ysize(map_for_showing_rgb_data_.width(),
-                 map_for_showing_rgb_data_.height());
-  cv::Mat yoloimg(ysize, CV_8UC3, map_for_showing_rgb_data_.data());
+  if(has_rgb_data_)
+  {
+    cv::Size ysize(map_for_showing_rgb_data_.width(),
+                   map_for_showing_rgb_data_.height());
+    cv::Mat yoloimg(ysize, CV_8UC3, map_for_showing_rgb_data_.data());
 
-  msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", yoloimg).toImageMsg();
+    msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", yoloimg).toImageMsg();
 
-  publisher_image_rgb_.publish(msg);
+    publisher_image_rgb_.publish(msg);
+  }
 
   cv::Size dsize(map_for_showing_depth_data_.width(),
                  map_for_showing_depth_data_.height());

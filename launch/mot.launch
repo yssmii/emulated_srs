@@ -2,6 +2,8 @@
   <arg name="sensor_name" default="D435" />
   <arg name="exp_distance" default="1000.0" />
 
+  <arg name="topic_name" default="/camera/depth_registered/points" />
+
   <arg name="record_p" default="0" />
 
   <arg name="fps" default="1" />
