@@ -68,7 +68,7 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
     param_publish_images_p_(0),
     param_publish_markers_p_(0),
     param_experimental_doublecheck_p_(false),
-    param_name_sensor_("D435"),
+    param_name_sensor_(""),
     param_fname_mask_("MASK.png"),
     //param_fname_region_("REG.png"),
     param_dist_testpiece_(-1.0),

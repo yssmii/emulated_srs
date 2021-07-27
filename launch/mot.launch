@@ -1,8 +1,13 @@
 <launch>
   <arg name="sensor_name" default="D435" />
+  <!--
+  <arg name="sensor_name" default="Structure" />
+  -->
   <arg name="exp_distance" default="1000.0" />
 
+  <!--
   <arg name="topic_name" default="/camera/depth_registered/points" />
+  -->
 
   <arg name="record_p" default="0" />
 
@@ -26,8 +31,9 @@
   
   <group ns="sensing_unit">
     <group if="$(eval sensor_name=='D435')">
-      <include file="$(find realsense2_camera)/launch/rs_rgbd.launch" />
       <!--
+      <include file="$(find realsense2_camera)/launch/rs_rgbd.launch" />
+      -->
       <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
           <arg name="align_depth" value="true" />
           <arg name="depth_width" value="1280" />
@@ -37,7 +43,11 @@
           <arg name="color_height" value="720" />
           <arg name="color_fps" value="15" />
           </include>
-      -->
+    </group>
+    <group if="$(eval sensor_name=='Structure')">
+      <remap from="/sensing_unit/camera/depth/points"
+             to="/sensing_unit/camera/depth_registered/points" />
+      <include file="$(find openni2_launch)/launch/openni2.launch" />
     </group>
   </group>
   
@@ -46,14 +56,18 @@
     <node name="throttle" pkg="topic_tools" type="throttle"
           args="messages /sensing_unit/camera/depth_registered/points
                 $(arg fps)
-                /processing_unit/throttle/depth_registered/points" />
+                /processing_unit/throttle/points" />
     
-    <node name="obstacle_measurer" pkg="emulated_srs" type="obstacle_measurer"
+    <node name="obstacle_detector" pkg="emulated_srs" type="obstacle_detector"
 	  output="screen" cwd="node">
       <remap from="/camera/depth_registered/points"
-             to="/processing_unit/throttle/depth_registered/points" />
+             to="/processing_unit/throttle/points" />
       
       <param name="sensor_name" value="$(arg sensor_name)" />
+      <!--
+      <param name="topic_name" value="/camera/depth_registered/points" />
+      <param name="topic_name" value="$(arg topic_name)" />
+      -->
 
       <param name="dist_testpiece" value="$(arg exp_distance)" />
 
@@ -82,7 +96,7 @@
                   /emulated_srs/setup_experiment
                   /tf /tf_static">
             <remap from="/camera/depth_registered/points"
-                   to="/processing_unit/throttle/depth_registered/points" />
+                   to="/processing_unit/throttle/points" />
       </node>
  <!--
       <node name="record_points" pkg="rosbag" type="record" output="screen"
