@@ -1,8 +1,9 @@
 <launch>
-  <arg name="sensor_name" default="D435" />
-  <!--
-  <arg name="sensor_name" default="Structure" />
-  -->
+  <arg name="sensor_name"
+       default="D435"
+       doc="D435|D455|L515|Structure|Kinect|Kinect2|Astra"
+       />
+
   <arg name="exp_distance" default="1000.0" />
 
   <!--
@@ -11,7 +12,7 @@
 
   <arg name="record_p" default="0" />
 
-  <arg name="fps" default="1" />
+  <arg name="fps" default="4" />
 
   <arg name="zkey" default="1500.0" />
   <arg name="min_gap_of_occluding_boundary" default="50.0" />
@@ -30,10 +31,9 @@
   <arg name="filename_region" default="REG.png" />
   
   <group ns="sensing_unit">
-    <group if="$(eval sensor_name=='D435')">
-      <!--
-      <include file="$(find realsense2_camera)/launch/rs_rgbd.launch" />
-      -->
+    <group if="$(eval sensor_name=='D435' or 
+                       sensor_name=='D455' or
+                       sensor_name=='L515')" >
       <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
           <arg name="align_depth" value="true" />
           <arg name="depth_width" value="1280" />
@@ -44,10 +44,27 @@
           <arg name="color_fps" value="15" />
           </include>
     </group>
+    
     <group if="$(eval sensor_name=='Structure')">
       <remap from="/sensing_unit/camera/depth/points"
              to="/sensing_unit/camera/depth_registered/points" />
       <include file="$(find openni2_launch)/launch/openni2.launch" />
+    </group>
+    
+    <group if="$(eval sensor_name=='Astra')">
+      <include file="$(find astra_camera)/launch/astra.launch" />
+    </group>
+
+    <group if="$(eval sensor_name=='Kinect')">
+      <include file="$(find freenect_launch)/launch/freenect.launch" />
+    </group>
+
+    <group if="$(eval sensor_name=='Kinect2')">
+      <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch" />
+    </group>
+
+    <group if="$(eval sensor_name=='ZED')">
+      <include file="$(find zed_wrapper)/launch/zed.launch" />
     </group>
   </group>
   
