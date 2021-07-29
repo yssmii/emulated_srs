@@ -10,3 +10,4 @@ int32 n_points
 string filename_saved
 string type_class
 float32 confidence_class
+int32 n_points_within

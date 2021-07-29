@@ -13,6 +13,8 @@
 #ifndef __ROS_EMULATED_SRS_OBSTACLE_MEASURER_H__
 #define __ROS_EMULATED_SRS_OBSTACLE_MEASURER_H__
 
+#include "eSRS/Object.h"
+
 #include "obstacle_detector.h"
 
 namespace emulated_srs
@@ -30,15 +32,34 @@ namespace emulated_srs
 class ObstacleMeasurer : public ObstacleDetector
 {
 public:
-  ObstacleMeasurer(void) {};
+  ObstacleMeasurer(void);
   virtual ~ObstacleMeasurer(void) {};
 
 private:
   void initializeMap(const int width,
                      const int height,
                      const int point_step);
-  int execObstacleDetection(void);
+  void publishExpSetup(void);
   void displayAll(void);
+
+  int publishObstaclesMessage(
+    const std::vector<eSRS::ObstacleClassified> &obs,
+    const int nobs);
+
+private:
+  int param_use_correct_region_p_;
+  std::string param_fname_correct_region_;
+  UFV::ImageData<unsigned char> map_correct_region_; //!< pre-measured
+  
+private:  
+  UFV::ImageData<unsigned char> map_for_showing_obstacles_within_;
+
+//private:  
+  //std::vector<emulated_srs::ObstacleWithin>  obstacles;
+
+private:
+  float min_z_;  //!< min value of correct distance range
+  float max_z_;  //!< max value of correct distance range
 
 }; //End of class SubscribeAndPublish
 

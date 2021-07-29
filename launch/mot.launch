@@ -34,6 +34,8 @@
     <group if="$(eval sensor_name=='D435' or 
                        sensor_name=='D455' or
                        sensor_name=='L515')" >
+      <include file="$(find realsense2_camera)/launch/rs_rgbd.launch"/>
+  <!--
       <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
           <arg name="align_depth" value="true" />
           <arg name="depth_width" value="1280" />
@@ -43,6 +45,7 @@
           <arg name="color_height" value="720" />
           <arg name="color_fps" value="15" />
           </include>
+  -->
     </group>
     
     <group if="$(eval sensor_name=='Structure')">
@@ -75,7 +78,7 @@
                 $(arg fps)
                 /processing_unit/throttle/points" />
     
-    <node name="obstacle_detector" pkg="emulated_srs" type="obstacle_detector"
+    <node name="obstacle_measurer" pkg="emulated_srs" type="obstacle_measurer"
 	  output="screen" cwd="node">
       <remap from="/camera/depth_registered/points"
              to="/processing_unit/throttle/points" />
@@ -89,6 +92,7 @@
       <param name="dist_testpiece" value="$(arg exp_distance)" />
 
       <param name="use_mask_p" value="$(arg use_mask_p)" />
+      <param name="use_region_p" value="$(arg use_region_p)" />
       
       <param name="zkey" value="$(arg zkey)" />
       <param name="min_gap_of_occluding_boundary"

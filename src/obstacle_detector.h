@@ -27,8 +27,9 @@
 
 #include "intensity_map.h"
 
-#include <emulated_srs/ClassifiedObstacle.h>
-#include <emulated_srs/ClassifiedObstacleArray.h>
+#include <emulated_srs/Obstacle.h>
+//#include <emulated_srs/ClassifiedObstacle.h>
+//#include <emulated_srs/ClassifiedObstacleArray.h>
 
 namespace emulated_srs
 {
@@ -70,22 +71,27 @@ protected:
   virtual void initializeMap(const int width,
                              const int height,
                              const int point_step);
-  virtual void reshapeMap(const int width,
-                          const int height,
-                          const int point_step);
-
-  virtual int execObstacleDetection(void);
 
   virtual void displayAll(void);
+
+  virtual void publishExpSetup(void);
   
-  virtual void publishAll(
-    const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
-    const int object_count);
+  //!障害物検知結果をpublishする
+  virtual int publishObstaclesMessage(
+    const std::vector<eSRS::ObstacleClassified> &obs,
+    const int nobs);
+
+  void setObstaclesMessage(
+    const std::vector<eSRS::ObstacleClassified> &obs,
+    const int nobs,
+    std::vector<emulated_srs::Obstacle> &obsmsgary);
 
 private:
   //!点群データをサブスクライブした際に呼び出されるコールバック関数
   void pc2Callback(
     const sensor_msgs::PointCloud2ConstPtr &pc2);
+
+  int execObstacleDetection(void);
 
   //!点群データを2次元のマップデータに変換する
   bool convertPC2ToMapData(
@@ -107,15 +113,18 @@ private:
     const unsigned long z_offset,
     const unsigned long rgba_offset);
 
-  void setMaskToMapData(void);
+  void reshapeMap(const int width,
+                  const int height,
+                  const int point_step);
+
+  void maskMap(void);
+
+  void publishAll(
+    const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
+    const int object_count);
 
   //!rvizでの表示用にMarkerとしてpublishする
   int publishMarkersMessage(
-    const std::vector<eSRS::ObstacleClassified> &obs,
-    const int nobs);
-
-  //!障害物検知結果をpublishする
-  int publishObstaclesMessage(
     const std::vector<eSRS::ObstacleClassified> &obs,
     const int nobs);
 
@@ -140,7 +149,7 @@ protected:
   eSRS::ClassificationMap map_for_detection_;
   
   //! instance for displaying RGB images
-  emulated_srs::IntensityMapMask map_for_rgb_display_;
+  emulated_srs::IntensityMapWithMask map_for_rgb_display_;
 
   //! depth and RGB image data for displaying
   UFV::ImageData<unsigned char> map_for_showing_depth_data_;
@@ -166,21 +175,24 @@ protected:
   //! set true after the 1st subscription of PC2
   bool flg_initialized_p_;
 
-private:
+protected:
   //! ROS node handle
   ros::NodeHandle node_handle_;
   
+private:
   //! ROS subscriber
   ros::Subscriber subscriber_;
 
   //! ROS publishers
   ros::Publisher publisher_marker_;
-  ros::Publisher publisher_obstacle_;
   image_transport::Publisher publisher_image_depth_;
   image_transport::Publisher publisher_image_rgb_;
 
+protected:
+  ros::Publisher publisher_obstacle_;
   ros::Publisher publisher_exp_setup_; // experiment setup
 
+private:
   //! header of subscribed PC2
   std_msgs::Header header_pointcloud2_;
 

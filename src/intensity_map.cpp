@@ -21,7 +21,7 @@
 #include "intensity_map.h"
 
 void
-emulated_srs::IntensityMapMask::resetMaskImage(void)
+emulated_srs::IntensityMapWithMask::resetMaskImage(void)
 {
   UFV::ImageData<unsigned char> m;
   mask_image_ = m;
@@ -30,7 +30,7 @@ emulated_srs::IntensityMapMask::resetMaskImage(void)
 }
 
 int
-emulated_srs::IntensityMapMask::setMaskImage(const UFV::ImageData<unsigned char> &mask)
+emulated_srs::IntensityMapWithMask::setMaskImage(const UFV::ImageData<unsigned char> &mask)
 {
   if(mask.width() != this->width() || mask.height() != this->height() ||
      mask.nchannels() != 1)
@@ -42,7 +42,7 @@ emulated_srs::IntensityMapMask::setMaskImage(const UFV::ImageData<unsigned char>
 }
 
 int
-emulated_srs::IntensityMapMask::setMaskImage(const std::string &maskfile)
+emulated_srs::IntensityMapWithMask::setMaskImage(const std::string &maskfile)
 {
   UFV::ImageData<unsigned char> maskimg;
 
@@ -59,7 +59,7 @@ emulated_srs::IntensityMapMask::setMaskImage(const std::string &maskfile)
 }
 
 int
-emulated_srs::IntensityMapMask::mask(void)
+emulated_srs::IntensityMapWithMask::mask(void)
 {
   if(!this->hasMaskImage()) return UFV::NG;
 

@@ -15,6 +15,9 @@
 
 #include <ros/ros.h>
 
+#include <emulated_srs/Obstacle.h>
+#include <emulated_srs/ExpSetup.h>
+
 #include "obstacle_measurer.h"
 
 /*!
@@ -31,6 +34,21 @@ int main(int argc, char** argv)
   return 0;
 }
 
+emulated_srs::ObstacleMeasurer::ObstacleMeasurer(void)
+    :
+    emulated_srs::ObstacleDetector(),
+    param_use_correct_region_p_(0),
+    param_fname_correct_region_("Reg.png"),
+    min_z_(0),
+    max_z_(0)
+{
+  node_handle_.getParam("use_region_p", param_use_correct_region_p_);
+  node_handle_.getParam("filename_region", param_fname_correct_region_);
+
+  ROS_INFO("use_region_p: %d", param_use_correct_region_p_);
+  ROS_INFO("filename_region: %s", param_fname_correct_region_.c_str());
+}
+
 void emulated_srs::ObstacleMeasurer::initializeMap(
   const int width,
   const int height,
@@ -38,21 +56,71 @@ void emulated_srs::ObstacleMeasurer::initializeMap(
 {
   this->emulated_srs::ObstacleDetector::initializeMap(width,height,point_step);
 
+  if(param_use_correct_region_p_)
+  {
+    cv::Mat corimg = cv::imread(param_fname_correct_region_.c_str(), 0);
+    if(corimg.data == NULL)
+    {
+      ROS_ERROR("Cannot open region image: %s",
+                param_fname_correct_region_.c_str());
+      return;
+    }
+
+    cv::Size size = corimg.size();
+  
+    map_correct_region_.setData(size.width, size.height, 1, corimg.ptr());
+    map_for_showing_obstacles_within_.reshape(size.width, size.height, 3);
+  }
+  
   return;
 }
 
-/*!
-*/
-int emulated_srs::ObstacleMeasurer::execObstacleDetection(void)
+void emulated_srs::ObstacleMeasurer::publishExpSetup(void)
 {
-  int object_count = this->emulated_srs::ObstacleDetector::execObstacleDetection();
+  // publish the experimental setup as a latch topic
+  emulated_srs::ExpSetup exp_setup;
+  
+  exp_setup.name_sensor = param_name_sensor_;
+  exp_setup.dist_testpiece = param_dist_testpiece_;
+  exp_setup.fname_mask = param_use_mask_p_ ? param_fname_mask_ : "";
+  exp_setup.param_zkey = param_zkey_;
+  exp_setup.param_min_gap = param_gap_;
+  exp_setup.param_min_size = param_min_size_;
 
-  return object_count;
+  exp_setup.fname_region =
+    param_use_correct_region_p_ ? param_fname_correct_region_ : "";
+
+  publisher_exp_setup_.publish(exp_setup);
+
+  return;
+}
+
+int emulated_srs::ObstacleMeasurer::publishObstaclesMessage(
+  const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
+  const int object_count)
+{
+  std::vector<emulated_srs::Obstacle> obsmsgary;
+
+  this->emulated_srs::ObstacleDetector::setObstaclesMessage(obstacle_classified, object_count, obsmsgary);
+
+    
+  
+  for (int i = 0; i < object_count; i++)
+  {
+    publisher_obstacle_.publish(obsmsgary[i]);
+  }
+
+  return UFV::OK;
 }
 
 void emulated_srs::ObstacleMeasurer::displayAll(void)
 {
   this->emulated_srs::ObstacleDetector::displayAll();
+
+  if (param_display_images_p_ && param_use_correct_region_p_)
+  {
+    map_for_showing_obstacles_within_.display("Region", 10);
+  }
 
   return;
   

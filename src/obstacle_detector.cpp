@@ -93,19 +93,18 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
   node_handle_.getParam("experimental_doublecheck_p", param_doublecheck);
 
   node_handle_.getParam("filename_mask", param_fname_mask_);
-  //node_handle_.getParam("filename_region", param_fname_region_);
   node_handle_.getParam("dist_testpiece", param_dist_testpiece_);
 
   // print them on the console for confirmation
-  ROS_INFO("topic to subscribe to: %s", param_name_topic_);
-  ROS_INFO("sensor: %s", param_name_sensor_);
+  ROS_INFO("topic to subscribe to: %s", param_name_topic_.c_str());
+  ROS_INFO("sensor: %s", param_name_sensor_.c_str());
 
-  ROS_INFO("zkey: %f", param_zkey_);
   ROS_INFO("zkey: %f", param_zkey_);
   ROS_INFO("min_gap_of_occluding_boundary: %f", param_gap_);
   ROS_INFO("min_pixels_as_object: %d", param_min_size_);
   ROS_INFO("min_overlap_rate: %f", param_min_overlap_);
   ROS_INFO("use_mask_p: %d", param_use_mask_p_);
+  ROS_INFO("filename_mask: %s", param_fname_mask_.c_str());
   ROS_INFO("display_images_p: %d", param_display_images_p_);
   ROS_INFO("publish_images_p: %d", param_publish_images_p_);
   ROS_INFO("publish_markers_p: %d", param_publish_markers_p_);
@@ -138,20 +137,8 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
 
   ROS_INFO("subscriber: OK");
 
-  // publish the experimental setup as a latch topic
-  emulated_srs::ExpSetup exp_setup;
-  exp_setup.name_sensor = param_name_sensor_;
-  exp_setup.dist_testpiece = param_dist_testpiece_;
-  exp_setup.fname_mask = param_use_mask_p_ ? param_fname_mask_ : "";
-  //exp_setup.fname_region = param_fname_region_;
-  exp_setup.fname_region = "";
-  exp_setup.param_zkey = param_zkey_;
-  exp_setup.param_min_gap = param_gap_;
-  exp_setup.param_min_size = param_min_size_;
-
-  publisher_exp_setup_.publish(exp_setup);
-
 }
+
 
 /*!
  * @if jp
@@ -217,7 +204,7 @@ void emulated_srs::ObstacleDetector::pc2Callback(
   header_pointcloud2_ = pc2->header;
 
   // apply masking to the depth MAP image
-  setMaskToMapData();
+  maskMap();
   ROS_INFO_ONCE("masking completed");
 
   // make image for display
@@ -271,7 +258,8 @@ void emulated_srs::ObstacleDetector::initializeMap(
   map_for_detection_.setMinOverlapRate(param_min_overlap_); // 0..1
   if (param_use_mask_p_ != 0)
   {
-    map_for_detection_.setMaskImage(TC_OPT_MASKFILE);
+    //map_for_detection_.setMaskImage(TC_OPT_MASKFILE);
+    map_for_detection_.setMaskImage(param_fname_mask_);
   }
 
   flg_initialized_p_ = true;
@@ -293,10 +281,10 @@ void emulated_srs::ObstacleDetector::reshapeMap(
 
   has_rgb_data_ = false;
   
-  if(point_step == 32)
+  if(point_step == 32) // XYZRGB
   {
     map_for_rgb_display_.reshape(width, height);
-    ROS_INFO_ONCE("IntensityMapMask");
+    ROS_INFO_ONCE("IntensityMapWithMask");
     has_rgb_data_ = true;
   }
 
@@ -304,7 +292,7 @@ void emulated_srs::ObstacleDetector::reshapeMap(
   ROS_INFO_ONCE("ClassificationMap");
 
   map_for_showing_depth_data_.reshape(width, height, IMAGE_N_CHANNELS);  
-  if(point_step == 32)
+  if(point_step == 32) // XYZRGB
   {
     map_for_showing_rgb_data_.reshape(width, height, IMAGE_N_CHANNELS);
   }
@@ -349,7 +337,7 @@ bool emulated_srs::ObstacleDetector::convertPC2ToMapData(
   result = retrievePC2OffsetInfomation(point_cloud2,
                                        x_offset, y_offset, z_offset,
                                        rgb_offset);
-  ROS_INFO_ONCE("offsets: %d %d %d, %d",
+  ROS_INFO_ONCE("offsets: %lu %lu %lu, %lu",
                 x_offset, y_offset, z_offset, rgb_offset);
   if(result == false)
   {
@@ -373,7 +361,7 @@ bool emulated_srs::ObstacleDetector::convertPC2ToMapData(
  * @brief 処理画像のマスク処理を行う
  * @endif
 */
-void emulated_srs::ObstacleDetector::setMaskToMapData()
+void emulated_srs::ObstacleDetector::maskMap()
 {
   bool ret(false);
 
@@ -628,6 +616,11 @@ void emulated_srs::ObstacleDetector::publishAll(
   const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
   const int object_count)
 {
+  if(count_detection_ == 1)
+  {
+    publishExpSetup();
+  }
+    
   publishObstaclesMessage(obstacle_classified, object_count);
 
   if (param_publish_markers_p_)
@@ -638,6 +631,24 @@ void emulated_srs::ObstacleDetector::publishAll(
   {
     publishImagesMessage();
   }
+  return;
+}
+
+void emulated_srs::ObstacleDetector::publishExpSetup(void)
+{
+  // publish the experimental setup as a latch topic
+  emulated_srs::ExpSetup exp_setup;
+  exp_setup.name_sensor = param_name_sensor_;
+  exp_setup.dist_testpiece = param_dist_testpiece_;
+  exp_setup.fname_mask = param_use_mask_p_ ? param_fname_mask_ : "";
+  //exp_setup.fname_region = param_fname_region_;
+  exp_setup.fname_region = "";
+  exp_setup.param_zkey = param_zkey_;
+  exp_setup.param_min_gap = param_gap_;
+  exp_setup.param_min_size = param_min_size_;
+
+  publisher_exp_setup_.publish(exp_setup);
+
   return;
 }
 
@@ -741,26 +752,26 @@ int emulated_srs::ObstacleDetector::publishImagesMessage(void)
  * centroid_2D:                           # of the points
  *   x: 60.65249252319336
  *   y: 197.5838623046875
- * n_points: 19902                        # number of the points
+ * n_points: 19902                        # num of the points
+ * n_points_within: 0                     #        within the correct region
  * filename_saved: "20210721_112032_49269199.png"
  * type_class: "unknown"
  * confidence_class: 0.0
  * ---
  * </PRE>
  */
-int emulated_srs::ObstacleDetector::publishObstaclesMessage(
+
+void emulated_srs::ObstacleDetector::setObstaclesMessage(
   const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
-  const int object_count)
+  const int object_count,
+  std::vector<emulated_srs::Obstacle> &obsmsgary)
 {
-  //emulated_srs::ClassifiedObstacleArray obsmsgary;
   std::string ifname = getLocalTimeString(header_pointcloud2_.stamp) + ".png";
 
   if (object_count <= 0)
   {
     emulated_srs::Obstacle obsmsg;
 
-    //obsmsg.stamp = timestamp_subscribe_pointcloud2_; // データsubscribe時刻
-    //obsmsg.stamp = timestamp_detection_result_published_;
     obsmsg.header = header_pointcloud2_;
     obsmsg.header.seq = count_detection_;
 
@@ -793,9 +804,10 @@ int emulated_srs::ObstacleDetector::publishObstaclesMessage(
     obsmsg.centroid_2D.y = 0.0;
 
     obsmsg.n_points = 0;
+    obsmsg.n_points_within = 0;
 
-    publisher_obstacle_.publish(obsmsg);
-    //obsmsgary.obstacles.push_back(obsmsg);
+    //publisher_obstacle_.publish(obsmsg);
+    obsmsgary.push_back(obsmsg);
   }
   else
   {
@@ -803,10 +815,7 @@ int emulated_srs::ObstacleDetector::publishObstaclesMessage(
     {
       emulated_srs::Obstacle obsmsg;
 
-      //obsmsg.stamp = timestamp_subscrib_pointcloud2_;
-      //obsmsg.stamp = timestamp_detection_result_published_;
       obsmsg.header = header_pointcloud2_;
-      //obsmsg.header.seq = count_detection_;
       obsmsg.header.seq = 0;
 
       obsmsg.filename_saved = ifname;
@@ -837,12 +846,28 @@ int emulated_srs::ObstacleDetector::publishObstaclesMessage(
       obsmsg.centroid_2D.y = obstacle_classified[i].grv.y;
 
       obsmsg.n_points = obstacle_classified[i].size;
+      obsmsg.n_points_within = 0;
 
-      publisher_obstacle_.publish(obsmsg);
-      //obsmsgary.obstacles.push_back(obsmsg);
+      //publisher_obstacle_.publish(obsmsg);
+      obsmsgary.push_back(obsmsg);
     }
   }
 
+  return;
+}
+
+int emulated_srs::ObstacleDetector::publishObstaclesMessage(
+  const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
+  const int object_count)
+{
+  std::vector<emulated_srs::Obstacle> obsmsgary;
+
+  setObstaclesMessage(obstacle_classified, object_count, obsmsgary);
+  
+  for (int i = 0; i < object_count; i++)
+  {
+    publisher_obstacle_.publish(obsmsgary[i]);
+  }
   //publisher_obstacle_.publish(obsmsgary);
 
   return UFV::OK;

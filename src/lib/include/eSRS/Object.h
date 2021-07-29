@@ -21,25 +21,26 @@
 namespace eSRS
 {
 /*! @struct BoundingBox
- *  @brief 検出結果の矩形描画用構造体
- * 
- *  検出結果の矩形描画用(TODO:正確な用途を確認)
+ *  @brief Bounding box representing a detected object in a depth image
+ *
+ *  - Image coordinate system with origin at upper left
+ *  - Unit: pixels
  */
 struct BoundingBox : public UFV::Rect
 {
   /*!
-   *  @brief コンストラクタ
+   *  @brief Constructor
    *  @note       N/A
    *  @attention  N/A
    */
   BoundingBox(void) {};
 
   /*!
-   *  @brief コンストラクタ
-   *  @param  [in] ix  基底の構造体(UFV::Rect)に渡す矩形のX座標
-   *  @param  [in] iy  基底の構造体(UFV::Rect)に渡す矩形のY座標
-   *  @param  [in] w   基底の構造体(UFV::Rect)に渡す矩形のwidth
-   *  @param  [in] y   基底の構造体(UFV::Rect)に渡す矩形のheight
+   *  @brief Constructor
+   *  @param  [in] ix  X coordinate of the upper left
+   *  @param  [in] iy  Y coordinate of the upper left
+   *  @param  [in] w   witdth
+   *  @param  [in] y   height
    *  @note       N/A
    *  @attention  N/A
    */
@@ -48,25 +49,26 @@ struct BoundingBox : public UFV::Rect
 };
 
 /*! @struct BoundingVolume
- *  @brief BoundingVolume
+ *  @brief Bounding cuboid representing a detected object in 3D
  *
- *  
+ *  - Right-handed Sensor-coordinate system
+ *  - Unit: mm
  */
 struct BoundingVolume
 {
 
   /*!
-   *  @brief コンストラクタ
+   *  @brief Constructor
    *  @note       N/A
    *  @attention  N/A
    */
   BoundingVolume(void) : x(0), y(0), z(0), width(0), height(0), depth(0) {};
 
   /*!
-   *  @brief コンストラクタ
-   *  @param  [in] ix  X座標
-   *  @param  [in] iy  Y座標
-   *  @param  [in] iz  Z座標
+   *  @brief Constructor
+   *  @param  [in] ix  X coordinate of the upper left front
+   *  @param  [in] iy  Y coordinate of the upper left front
+   *  @param  [in] iz  Z coordinate of the upper left front
    *  @param  [in] w   width
    *  @param  [in] h   height
    *  @param  [in] d   depth
@@ -77,48 +79,35 @@ struct BoundingVolume
                  const double w, const double h, const double d) 
       : x(ix), y(iy), z(iz), width(w), height(h), depth(d) {};
 
-  //! X座標
   double x;
-  
-  //! Y座標
   double y;
-  
-  //! Z座標
   double z;
-  
-  //! width
   double width;
-  
-  //! height
   double height;
-  
-  //! depth
   double depth;
 };
 
 /*! @struct DetectionMap::Obstacle
- *  @brief 検出した物体
- * 
- *  検出した物体の情報
+ *  @brief Obstacle detected in a depth image
  */
 struct Obstacle
 {
-  //! 
+  //! sequential number of the obstacle
   int             n;
   
-  //! 
+  //! 2D location in the image coordinate
   BoundingBox     bbox;
   
-  //! 
+  //! 3D location in the sensor coordinate system
   BoundingVolume  bvol;
   
-  //! 
+  //! 2D centroid of the obstacle (not center of the bounding box)
   UFV::Point2D    igrv;
 
-  //! 
+  //! 3D centroid of the obstacle (not center of the bounding volume)
   UFV::Point3D    grv;
   
-  //! サイズ (pixels)
+  //! number of the points of the obstacle [pixels]
   int             size;
 };
 
@@ -136,19 +125,8 @@ struct ObstacleClassified : public Obstacle
         overlap(0),
         conf(0.0),
         classstr("unknown"),
-        color(255.0,0.0,0.0)
-    {
-      /*
-      this->n = obs.n;
-      this->bbox = obs.bbox;
-      this->bvol = obs.bvol;
-      this->igrv = obs.igrv;
-      this->grv = obs.grv;
-      this->size = obs.size;
-      */
-    };
+        color(255.0,0.0,0.0) {};
   
-  //int n;
   float overlap;
   float conf;
   std::string classstr;
