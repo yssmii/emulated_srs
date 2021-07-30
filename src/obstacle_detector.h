@@ -62,6 +62,11 @@ public:
   static const float TC_OPT_MIN_OVERLAP_RATE; // 0.8;
 
   static const std::string TC_OPT_MASKFILE; // "MASK.png"
+  static const std::string TC_OPT_LOGDIR; // "Data/"
+
+  static const std::string LOGDIR_DEPTH; // "D/"
+  static const std::string LOGDIR_DETECTION; // "R/"
+  static const std::string LOGDIR_INTENSITY; // "I/"
 
 public:
   ObstacleDetector(void);
@@ -164,16 +169,19 @@ protected:
   int param_display_images_p_;
   int param_publish_images_p_;
   int param_publish_markers_p_;
+  int param_save_images_p_;
   bool param_experimental_doublecheck_p_;
 
   //! parameters on experimetal setup
   std::string param_name_sensor_;
   std::string param_fname_mask_;
+  std::string param_dname_log_;
   //std::string param_fname_region_;
-  float param_dist_testpiece_;
 
   //! set true after the 1st subscription of PC2
   bool flg_initialized_p_;
+
+  std::string basename_to_save_images_; //!< updated for every subscription
 
 protected:
   //! ROS node handle

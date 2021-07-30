@@ -26,16 +26,19 @@
   <arg name="publish_images_p" default="0" />
   <arg name="publish_markers_p" default="0" />
 
+  <arg name="save_images_p" default="0" />
+  <arg name="dirname_log" default="Data/" />
 
   <arg name="filename_mask" default="MASK.png" />
-  <arg name="filename_region" default="REG.png" />
+  <arg name="filename_region" default="Reg.png" />
   
   <group ns="sensing_unit">
     <group if="$(eval sensor_name=='D435' or 
                        sensor_name=='D455' or
                        sensor_name=='L515')" >
-      <include file="$(find realsense2_camera)/launch/rs_rgbd.launch"/>
   <!--
+      <include file="$(find realsense2_camera)/launch/rs_rgbd.launch"/>
+  -->
       <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
           <arg name="align_depth" value="true" />
           <arg name="depth_width" value="1280" />
@@ -44,8 +47,7 @@
           <arg name="color_width" value="1280" />
           <arg name="color_height" value="720" />
           <arg name="color_fps" value="15" />
-          </include>
-  -->
+      </include>
     </group>
     
     <group if="$(eval sensor_name=='Structure')">
@@ -102,10 +104,12 @@
 
       <param name="filename_mask" value="$(arg filename_mask)" />
       <param name="filename_region" value="$(arg filename_region)" />
+      <param name="dirname_log" value="$(arg dirname_log)" />
       
       <param name="display_images_p" value="$(arg display_images_p)" />
       <param name="publish_images_p" value="$(arg publish_images_p)" />
       <param name="publish_markers_p" value="$(arg publish_markers_p)" />
+      <param name="save_images_p" value="$(arg save_images_p)" />
     </node>
 
     <group if="$(arg record_p)">

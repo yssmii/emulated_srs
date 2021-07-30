@@ -1277,7 +1277,8 @@ eSRS::DetectionMap::normalizeWithObstacleRegion(UFV::ImageData<unsigned char> &b
   //! Depth Mapを bboxにコピーする
   this->normalize(bbox, maxdepth);
 
-  this->drawObstacleRegionWithLabel(bbox);
+  //this->drawObstacleRegionWithLabel(bbox);
+  this->drawObstacleRegion(bbox);
 
   return;
 }
@@ -1591,8 +1592,6 @@ const
     p1.y = m_obs_vec[i].igrv.y;
 
     //! - 画像に矩形を描画する
-    if (this->m_flg_drawlabel)
-    {
       //double fscale = 0.5/mag;
       double fscale1 = 0.5;
       double fscale2 = 0.35;
@@ -1615,8 +1614,6 @@ const
       cv::putText(img, xyzlabel.c_str(),
         textp_xyz, face, fscale2,
         cv::Scalar(0, 0, 0), thickness, cv::LINE_AA);
-
-    }
   }
 
   //this->printObstacles(stdout);

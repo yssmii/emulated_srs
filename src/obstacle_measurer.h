@@ -46,7 +46,13 @@ private:
     const std::vector<eSRS::ObstacleClassified> &obs,
     const int nobs);
 
+  void
+  setMeasurableInfo(const int object_count,
+                    std::vector<emulated_srs::Obstacle> &obsmsgary);
+
 private:
+  float param_dist_testpiece_; //!< exp. setup
+
   int param_use_correct_region_p_;
   std::string param_fname_correct_region_;
   UFV::ImageData<unsigned char> map_correct_region_; //!< pre-measured

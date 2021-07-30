@@ -37,14 +37,17 @@ int main(int argc, char** argv)
 emulated_srs::ObstacleMeasurer::ObstacleMeasurer(void)
     :
     emulated_srs::ObstacleDetector(),
+    param_dist_testpiece_(1500.0),
     param_use_correct_region_p_(0),
     param_fname_correct_region_("Reg.png"),
     min_z_(0),
     max_z_(0)
 {
+  node_handle_.getParam("dist_testpiece", param_dist_testpiece_);
   node_handle_.getParam("use_region_p", param_use_correct_region_p_);
   node_handle_.getParam("filename_region", param_fname_correct_region_);
 
+  ROS_INFO("dist_testpiece: %f", param_dist_testpiece_);
   ROS_INFO("use_region_p: %d", param_use_correct_region_p_);
   ROS_INFO("filename_region: %s", param_fname_correct_region_.c_str());
 }
@@ -95,6 +98,52 @@ void emulated_srs::ObstacleMeasurer::publishExpSetup(void)
   return;
 }
 
+
+void
+emulated_srs::ObstacleMeasurer::setMeasurableInfo(
+  const int object_count,
+  std::vector<emulated_srs::Obstacle> &obsmsgary)
+{
+  if(object_count <= 0) return;
+  if((long unsigned int)object_count != obsmsgary.size())
+  {
+    ROS_WARN("Num of the detected obstacles mismatch: %d != %lu",
+             object_count, obsmsgary.size());
+    return;
+  }
+  
+  UFV::ImageData<short> labeled = map_for_detection_.getLabeledImageData();
+
+  int length = labeled.width()*labeled.height();
+  
+  short *plbl = labeled.data();
+  uchar *pcor = map_correct_region_.data();
+  uchar *pshow = map_for_showing_obstacles_within_.data();
+  for(int i=0; i<length; i++)
+  { 
+    pshow[0] = pshow[1] = pshow[2] = 0;
+    if(*pcor > 0)
+    {
+      pshow[2] = 255; // R
+      if(*plbl > 0)
+      {
+        obsmsgary[*plbl - 1].n_points_within += 1;
+      }
+      else
+      {
+        pshow[0] = 255;
+        pshow[1] = 255;
+      }
+    }
+
+    plbl++;
+    pcor++;
+    pshow += 3;
+  }
+    
+  return;
+}
+
 int emulated_srs::ObstacleMeasurer::publishObstaclesMessage(
   const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
   const int object_count)
@@ -103,9 +152,14 @@ int emulated_srs::ObstacleMeasurer::publishObstaclesMessage(
 
   this->emulated_srs::ObstacleDetector::setObstaclesMessage(obstacle_classified, object_count, obsmsgary);
 
-    
-  
-  for (int i = 0; i < object_count; i++)
+  if(param_use_correct_region_p_ && (object_count > 0))
+  {
+    setMeasurableInfo(object_count, obsmsgary);
+  }
+
+  //! if object_count==0, publish an  empty obstacle
+  publisher_obstacle_.publish(obsmsgary[0]);
+  for(int i = 1; i < object_count; i++)
   {
     publisher_obstacle_.publish(obsmsgary[i]);
   }

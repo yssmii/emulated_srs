@@ -39,6 +39,11 @@ const float emulated_srs::ObstacleDetector::TC_OPT_THRESHOLD_ZKEY = 1500.0;
 const float emulated_srs::ObstacleDetector::TC_OPT_THRESHOLD_GAP = 100.0;
 const float emulated_srs::ObstacleDetector::TC_OPT_MIN_OVERLAP_RATE = 0.8;
 const std::string emulated_srs::ObstacleDetector::TC_OPT_MASKFILE = "MASK.png";
+const std::string emulated_srs::ObstacleDetector::TC_OPT_LOGDIR = "Data/";
+
+const std::string emulated_srs::ObstacleDetector::LOGDIR_DEPTH = "D/";
+const std::string emulated_srs::ObstacleDetector::LOGDIR_DETECTION = "R/";
+const std::string emulated_srs::ObstacleDetector::LOGDIR_INTENSITY = "I/";
 
 /*!
  *  @brief main function
@@ -67,12 +72,13 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
     param_display_images_p_(0),
     param_publish_images_p_(0),
     param_publish_markers_p_(0),
+    param_save_images_p_(0),
     param_experimental_doublecheck_p_(false),
     param_name_sensor_(""),
-    param_fname_mask_("MASK.png"),
-    //param_fname_region_("REG.png"),
-    param_dist_testpiece_(-1.0),
+    param_fname_mask_(TC_OPT_MASKFILE),
+    param_dname_log_(TC_OPT_LOGDIR),
     flg_initialized_p_(false),
+    basename_to_save_images_("IMG.png"),
     node_handle_("~"),
     image_transport_(node_handle_)
 {
@@ -90,10 +96,11 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
   node_handle_.getParam("display_images_p", param_display_images_p_);
   node_handle_.getParam("publish_images_p", param_publish_images_p_);
   node_handle_.getParam("publish_markers_p", param_publish_markers_p_);
+  node_handle_.getParam("save_images_p", param_save_images_p_);
   node_handle_.getParam("experimental_doublecheck_p", param_doublecheck);
 
   node_handle_.getParam("filename_mask", param_fname_mask_);
-  node_handle_.getParam("dist_testpiece", param_dist_testpiece_);
+  node_handle_.getParam("dirname_log", param_dname_log_);
 
   // print them on the console for confirmation
   ROS_INFO("topic to subscribe to: %s", param_name_topic_.c_str());
@@ -105,9 +112,11 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
   ROS_INFO("min_overlap_rate: %f", param_min_overlap_);
   ROS_INFO("use_mask_p: %d", param_use_mask_p_);
   ROS_INFO("filename_mask: %s", param_fname_mask_.c_str());
+  ROS_INFO("dirname_log: %s", param_dname_log_.c_str());
   ROS_INFO("display_images_p: %d", param_display_images_p_);
   ROS_INFO("publish_images_p: %d", param_publish_images_p_);
   ROS_INFO("publish_markers_p: %d", param_publish_markers_p_);
+  ROS_INFO("save_images_p: %d", param_save_images_p_);
   ROS_INFO("experimental_doublecheck_p: %d", param_doublecheck);
   param_experimental_doublecheck_p_ = param_doublecheck;
 
@@ -202,14 +211,11 @@ void emulated_srs::ObstacleDetector::pc2Callback(
 
   // timestamp and frame_id
   header_pointcloud2_ = pc2->header;
+  basename_to_save_images_ = getLocalTimeString(header_pointcloud2_.stamp) + ".png";
 
   // apply masking to the depth MAP image
   maskMap();
   ROS_INFO_ONCE("masking completed");
-
-  // make image for display
-  map_for_detection_.normalize(map_for_showing_depth_data_);
-  ROS_INFO_ONCE("showing data prepared");
 
   // exec obect detection
   object_count = execObstacleDetection();
@@ -224,7 +230,7 @@ void emulated_srs::ObstacleDetector::pc2Callback(
 
   timestamp_detection_result_published_ = ros::Time::now();
 
-  // exec displaying
+  // exec displaying and saving
   displayAll();
 
   // exec publishing
@@ -256,6 +262,7 @@ void emulated_srs::ObstacleDetector::initializeMap(
   map_for_detection_.setMinGap(param_gap_);                 // mm
   map_for_detection_.setMinSize(param_min_size_);           // pixel
   map_for_detection_.setMinOverlapRate(param_min_overlap_); // 0..1
+  map_for_detection_.setDrawLabel(false); // 0..1
   if (param_use_mask_p_ != 0)
   {
     //map_for_detection_.setMaskImage(TC_OPT_MASKFILE);
@@ -304,7 +311,7 @@ void emulated_srs::ObstacleDetector::reshapeMap(
 std::string
 emulated_srs::ObstacleDetector::getLocalTimeString(ros::Time &rostime) const
 {
-  UFV::Time tm(rostime.sec, rostime.nsec);
+  UFV::Time tm(rostime.sec, rostime.nsec/1000);
   UFV::LocalTime ltm = getLocalTime(tm);
 
   return(UFV::getLocalTimeString(ltm));
@@ -639,7 +646,7 @@ void emulated_srs::ObstacleDetector::publishExpSetup(void)
   // publish the experimental setup as a latch topic
   emulated_srs::ExpSetup exp_setup;
   exp_setup.name_sensor = param_name_sensor_;
-  exp_setup.dist_testpiece = param_dist_testpiece_;
+  exp_setup.dist_testpiece = -1.0;
   exp_setup.fname_mask = param_use_mask_p_ ? param_fname_mask_ : "";
   //exp_setup.fname_region = param_fname_region_;
   exp_setup.fname_region = "";
@@ -654,7 +661,13 @@ void emulated_srs::ObstacleDetector::publishExpSetup(void)
 
 void emulated_srs::ObstacleDetector::displayAll(void)
 {
-  if(!(param_display_images_p_ || param_publish_images_p_)) return;
+  if(!(param_display_images_p_ ||
+       param_publish_images_p_ ||
+       param_save_images_p_))
+    return;
+
+  // Copy the depth image with rtection results for display
+  map_for_detection_.normalize(map_for_showing_depth_data_);
 
   if(has_rgb_data_)
   {
@@ -663,22 +676,48 @@ void emulated_srs::ObstacleDetector::displayAll(void)
   }
 
   // Overwrite the depth image with the obstacle reasons.
-  map_for_detection_.drawObstacleRegion(map_for_showing_depth_data_);
+  map_for_detection_.drawObstacleRegionWithLabel(map_for_showing_depth_data_);
 
   // Draw the bounding boxes for the obstacles on the RGB image.
+  /*
   if(has_rgb_data_)
   {
     map_for_detection_.drawBoundingBox(map_for_showing_rgb_data_);
   }
+  */
 
   if (param_display_images_p_)
   {
     // Display the images.
     if(has_rgb_data_)
     {
-      map_for_showing_rgb_data_.display("RGB", 10);
+      map_for_showing_rgb_data_.display("RGB", -1);
     }
-    map_for_showing_depth_data_.display("Depth", 10);
+    map_for_detection_.display("Depth",-1);
+    map_for_showing_depth_data_.display("Detection", 10);
+  }
+
+  if(param_save_images_p_)
+  {
+    // save the depth image
+    map_for_detection_.setWriteImage(true,
+                                     param_dname_log_ + LOGDIR_DEPTH);
+    map_for_detection_.writeImage(basename_to_save_images_);
+
+    // save the depth image with detection result
+    map_for_showing_depth_data_.setWriteImage(true,
+                                    param_dname_log_ + LOGDIR_DETECTION);
+    map_for_showing_depth_data_.writeImage(basename_to_save_images_);
+
+    if(has_rgb_data_)
+    {
+      // save the rgb image
+      map_for_showing_rgb_data_.setWriteImage(true, 
+                                    param_dname_log_ + LOGDIR_INTENSITY);
+      map_for_showing_rgb_data_.writeImage(basename_to_save_images_);
+    }
+    
+    ROS_INFO_ONCE("SAVED: %s", (param_dname_log_ + LOGDIR_DEPTH + basename_to_save_images_).c_str());
   }
 
   return;
@@ -766,7 +805,7 @@ void emulated_srs::ObstacleDetector::setObstaclesMessage(
   const int object_count,
   std::vector<emulated_srs::Obstacle> &obsmsgary)
 {
-  std::string ifname = getLocalTimeString(header_pointcloud2_.stamp) + ".png";
+  //std::string ifname = getLocalTimeString(header_pointcloud2_.stamp) + ".png";
 
   if (object_count <= 0)
   {
@@ -777,7 +816,7 @@ void emulated_srs::ObstacleDetector::setObstaclesMessage(
 
     obsmsg.n = -1;
 
-    obsmsg.filename_saved = ifname;
+    obsmsg.filename_saved = basename_to_save_images_;
 
     obsmsg.type_class = "none";
     obsmsg.confidence_class = 0.0;
@@ -818,7 +857,7 @@ void emulated_srs::ObstacleDetector::setObstaclesMessage(
       obsmsg.header = header_pointcloud2_;
       obsmsg.header.seq = 0;
 
-      obsmsg.filename_saved = ifname;
+      obsmsg.filename_saved = basename_to_save_images_;
 
       obsmsg.n = obstacle_classified[i].n;
       obsmsg.type_class = obstacle_classified[i].classstr;
@@ -864,7 +903,9 @@ int emulated_srs::ObstacleDetector::publishObstaclesMessage(
 
   setObstaclesMessage(obstacle_classified, object_count, obsmsgary);
   
-  for (int i = 0; i < object_count; i++)
+  //! if object_count==0, publish an  empty obstacle
+  publisher_obstacle_.publish(obsmsgary[0]);
+  for(int i=1; i < object_count; i++)
   {
     publisher_obstacle_.publish(obsmsgary[i]);
   }
