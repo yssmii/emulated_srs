@@ -39,9 +39,7 @@ emulated_srs::ObstacleMeasurer::ObstacleMeasurer(void)
     emulated_srs::ObstacleDetector(),
     param_dist_testpiece_(1500.0),
     param_use_correct_region_p_(0),
-    param_fname_correct_region_("Reg.png"),
-    min_z_(0),
-    max_z_(0)
+    param_fname_correct_region_("Reg.png")
 {
   node_handle_.getParam("dist_testpiece", param_dist_testpiece_);
   node_handle_.getParam("use_region_p", param_use_correct_region_p_);

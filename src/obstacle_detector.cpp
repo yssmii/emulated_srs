@@ -29,7 +29,6 @@
 #include <opencv2/core.hpp>
 
 #include <emulated_srs/Obstacle.h>
-//#include <emulated_srs/ClassifiedObstacleArray.h>
 #include <emulated_srs/ExpSetup.h>
 
 #include "UFV/utils.h"

@@ -26,6 +26,12 @@ add_executable(obstacle_measurer
   intensity_map.cpp
   obstacle_detector.cpp
   obstacle_measurer.cpp)
+
+add_executable(region_maker
+  intensity_map.cpp
+  obstacle_detector.cpp
+  region_maker.cpp)
+
 link_directories(${CUDA_LIBRARY_DIR})
 
 add_dependencies(obstacle_detector
@@ -37,6 +43,10 @@ add_dependencies(obstacle_classifier
   ${catkin_EXPORTED_TARGETS})
 
 add_dependencies(obstacle_measurer
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS})
+
+add_dependencies(region_maker
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS})
 
@@ -64,15 +74,28 @@ target_link_libraries(obstacle_measurer
   ${YOLO_LIBRARIES}
   )
 
+target_link_libraries(region_maker
+  eSRS
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+  ${YOLO_LIBRARIES}
+  )
+
 add_custom_target(maskfile)
 add_custom_command(TARGET obstacle_detector POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/share/MASK.png $<TARGET_FILE_DIR:obstacle_detector>
   )
+
 add_custom_command(TARGET obstacle_classifier POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/share/MASK.png $<TARGET_FILE_DIR:obstacle_classifier>
   )
+
 add_custom_command(TARGET obstacle_measurer POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/share/MASK.png $<TARGET_FILE_DIR:obstacle_measurer>
+  )
+
+add_custom_command(TARGET region_maker POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/share/MASK.png $<TARGET_FILE_DIR:region_maker>
   )
 
 if(WITH_YOLO)

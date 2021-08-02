@@ -22,14 +22,12 @@
 #include <image_transport/image_transport.h>
 #include <opencv2/core.hpp>
 
-#include "UFV/ImageData.h"
+#include <UFV/ImageData.h>
 #include <eSRS/ClassificationMap.h>
 
-#include "intensity_map.h"
-
 #include <emulated_srs/Obstacle.h>
-//#include <emulated_srs/ClassifiedObstacle.h>
-//#include <emulated_srs/ClassifiedObstacleArray.h>
+
+#include "intensity_map.h"
 
 namespace emulated_srs
 {
@@ -86,10 +84,22 @@ protected:
     const std::vector<eSRS::ObstacleClassified> &obs,
     const int nobs);
 
-  void setObstaclesMessage(
+  virtual void setObstaclesMessage(
     const std::vector<eSRS::ObstacleClassified> &obs,
     const int nobs,
     std::vector<emulated_srs::Obstacle> &obsmsgary);
+
+  virtual void publishAll(
+    const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
+    const int object_count);
+
+  //!rvizでの表示用にMarkerとしてpublishする
+  virtual int publishMarkersMessage(
+    const std::vector<eSRS::ObstacleClassified> &obs,
+    const int nobs);
+
+  //!障害物検出結果を可視化した画像をpublishする
+  virtual int publishImagesMessage(void);
 
 private:
   //!点群データをサブスクライブした際に呼び出されるコールバック関数
@@ -124,18 +134,6 @@ private:
 
   void maskMap(void);
 
-  void publishAll(
-    const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
-    const int object_count);
-
-  //!rvizでの表示用にMarkerとしてpublishする
-  int publishMarkersMessage(
-    const std::vector<eSRS::ObstacleClassified> &obs,
-    const int nobs);
-
-  //!障害物検出結果を可視化した画像をpublishする
-  int publishImagesMessage(
-    void);
 
 public:
   std::string getLocalTimeString(ros::Time &rostime) const;

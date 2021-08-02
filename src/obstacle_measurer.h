@@ -63,10 +63,6 @@ private:
 //private:  
   //std::vector<emulated_srs::ObstacleWithin>  obstacles;
 
-private:
-  float min_z_;  //!< min value of correct distance range
-  float max_z_;  //!< max value of correct distance range
-
 }; //End of class SubscribeAndPublish
 
 } // end of namespace emulated_srs
