@@ -567,7 +567,8 @@ bool emulated_srs::ObstacleDetector::createDepthMapAndRGBMap(
     z_dep[map_idx] = *((float *)(&pc2data[i + z_offset]));
 
     //x,y,zの値で評価するのはzだけで良い
-    if (z_dep[map_idx] == std::numeric_limits<float>::quiet_NaN())
+    //if (z_dep[map_idx] == std::numeric_limits<float>::quiet_NaN())
+    if (z_dep[map_idx] != z_dep[map_idx]) // NaN == NaN is false
     {
       x_dep[map_idx] = 0;
       y_dep[map_idx] = 0;
@@ -600,10 +601,12 @@ bool emulated_srs::ObstacleDetector::createDepthMapAndRGBMap(
  * @brief 障害物検出を実施する
  * @retval 検出した障害物の数 
  * @endif
-*/
-int emulated_srs::ObstacleDetector::execObstacleDetection(void)
+ */
+int
+emulated_srs::ObstacleDetector::execObstacleDetection(void)
 {
-  int object_count = map_for_detection_.detect();
+  int object_count = 0;
+  object_count = map_for_detection_.detect();
   count_detection_++;
   
   return object_count;
@@ -618,7 +621,8 @@ int emulated_srs::ObstacleDetector::execObstacleDetection(void)
  *       マーカーや画像データをパブリッシュするかどうかは起動時のlaunchに従う。
  * @endif
 */
-void emulated_srs::ObstacleDetector::publishAll(
+void
+emulated_srs::ObstacleDetector::publishAll(
   const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
   const int object_count)
 {
