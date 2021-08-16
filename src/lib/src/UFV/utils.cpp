@@ -241,15 +241,15 @@ UFV::getLocalTimeString(const UFV::LocalTime &ltm)
 {
   std::stringstream str_stream;
   str_stream << std::setw(2) << std::setfill('0') << ltm.year
-             << std::setw(2) << std::setfill('0') << ltm.month
-             << std::setw(2) << std::setfill('0') << ltm.mday
+             << std::setw(2) << std::right << std::setfill('0') << ltm.month
+             << std::setw(2) << std::right << std::setfill('0') << ltm.mday
              << std::setw(1) << "_"
-             << std::setw(2) << std::setfill('0') << ltm.hour
-             << std::setw(2) << std::setfill('0') << ltm.minute
-             << std::setw(2) << std::setfill('0') << ltm.second
+             << std::setw(2) << std::right << std::setfill('0') << ltm.hour
+             << std::setw(2) << std::right << std::setfill('0') << ltm.minute
+             << std::setw(2) << std::right << std::setfill('0') << ltm.second
              << std::setw(1) << "_"
-             << std::setw(3) << std::setfill('0') << ltm.millisecond
-             << std::setw(3) << std::setfill('0') << ltm.microsecond;
+             << std::setw(3) << std::right << std::setfill('0') << ltm.millisecond
+             << std::setw(3) << std::right << std::setfill('0') << ltm.microsecond;
   return str_stream.str();
 }
 

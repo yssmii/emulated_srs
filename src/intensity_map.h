@@ -18,15 +18,15 @@
 namespace emulated_srs
 {
 
-class IntensityMapMask : public UFV::IntensityMap
+class IntensityMapWithMask : public UFV::IntensityMap
 {
 public:
-  IntensityMapMask(void) {};
-  IntensityMapMask(const int width, const int height)
+  IntensityMapWithMask(void) {};
+  IntensityMapWithMask(const int width, const int height)
       : UFV::IntensityMap(width, height, 3, TYPE_U8)
     {
     };
-  ~IntensityMapMask(void) {};
+  ~IntensityMapWithMask(void) {};
   
 public:
   virtual void reshape(const int width, const int height) {

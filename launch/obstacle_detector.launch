@@ -1,4 +1,6 @@
 <launch>
+  <arg name="topic_name" default="/camera/depth_registered/points" />
+
   <arg name="zkey" default="1500.0" />
   
   <arg name="min_gap_of_occluding_boundary" default="100.0" />
@@ -11,8 +13,9 @@
   <arg name="publish_images_p" default="0" />
   <arg name="publish_markers_p" default="0" />
   
-  <node name="obstacle_classifier" pkg="emulated_srs" type="obstacle_detector"
+  <node name="obstacle_detector" pkg="emulated_srs" type="obstacle_detector"
 	output="screen" cwd="node">
+    <param name="topic_name" value="$(arg topic_name)" />
     <param name="zkey" value="$(arg zkey)" />
     <param name="min_gap_of_occluding_boundary"
 	   value="$(arg min_gap_of_occluding_boundary)" />

@@ -50,4 +50,4 @@ private:
 
 } // end of namespace emulated_srs
 
-#endif // __ESRS_ROS_OBSTACLE_DETECTOR_H__
+#endif // __ROS_EMULATED_SRS_OBSTACLE_CLASSIFIER_H__

@@ -81,8 +81,13 @@ endif()
 #add_action_files(DIRECTORY action FILES Sample.action)
 add_message_files(
   FILES
-  ClassifiedObstacle.msg
-  ClassifiedObstacleArray.msg
+  #Point2D32.msg
+  ImageCoord32.msg
+  #ICor32.msg
+  #ClassifiedObstacle.msg
+  #ClassifiedObstacleArray.msg
+  Obstacle.msg
+  ExpSetup.msg
   )
 
 #generate_messages(DEPENDENCIES std_msgs actionlib_msgs)
