@@ -19,7 +19,9 @@
 
 * Ubuntu 18.04
 * ROS Melodic
-* Sensor package that publishes organized PC2 messages, e.g., [freenect_launch](http://wiki.ros.org/freenect_launch), [realsense-ros](https://github.com/IntelRealSense/realsense-ros), etc.
+* Sensor package that publishes organized PC2 messages,
+  e.g., [freenect_launch](http://wiki.ros.org/freenect_launch),
+  [realsense-ros](https://github.com/IntelRealSense/realsense-ros), etc.
 * [darknet and YOLOv3](https://pjreddie.com/darknet/) (optional)
   - [CUDA 10.2](https://developer.nvidia.com/cuda-toolkit-archive)
   - [CUDNN 7.6](https://developer.nvidia.com/rdp/cudnn-archive)
@@ -67,31 +69,36 @@
 
 4. Update the mask image, if necessary.
 
-        cd ~/catkin_make/devel/lib/emulated_srs
-        rm MASK.png
-        ./makeMask 320 0 320 480    # if mask the right half of VGA images
+       cd ~/catkin_make/devel/lib/emulated_srs
+       rm MASK.png
+       ./makeMask 320 0 320 480    # mask for the right half of a VGA image
 
 ## Usage
 
-1. Run the sensor package to publish the organized PC2 messages. 
+1. Run the sensor package to publish the organized PC2 messages;
 
-        roslaunch freenect_launch freenect.launch     # for freenect_launch
-        roslaunch realsense2_camera rs_rgbd.launch    # for realsense-ros
+   for freenect_launch:
+
+       roslaunch freenect_launch freenect.launch
+
+   for realsense-ros:
+
+       roslaunch realsense2_camera rs_rgbd.launch
 
 2. Run obstacle_classifier.
 
-        roslaunch emulated_srs obstacle_classifier.launch
+       roslaunch emulated_srs obstacle_classifier.launch
 
 * ROS launch parameters
   - _zkey_: The limit distance of detection. Pixels that are farther away from
     the sensor than this distance are excluded from the obstacle detection. See
-    figure 1. (default: 1500.0 mm)
+    figure 1. (default: 1500.0 [mm])
   - _min_gap_of_occluding_boundary_: The minimum distance of occluding contours.
     If the 3D distance between two pixels adjacent on a distance image is
     greater than this value, they are regarded as being contained in separate
-    objects. (default: 100.0 mm)
+    objects. (default: 100.0 [mm])
   - _min_pixels_as_object_: Minimum obstacle size on a distance image. If
-    smaller than this, it is regarded as noise.（default: 500 pixels)
+    smaller than this, it is regarded as noise.（default: 500 [pixels])
   - _min_overlap_rate_: The overlap rate on an image between an obstacle
     detected in a distance image and an object detected/classified in a
     corresponding RGB image by YOLO. If greater than this value, the obstacle
@@ -105,67 +112,78 @@
     published. (default: 0)
   - _publish_markers_p_: If non-zero, detection results are published as
     visualization markers for rviz. (default: 0)
+  - _save_images_p_: if non-zero, subscribed PC2s are saved as depth and RGB image files, and detection results are saved as overwritten depth images. (default: 0)
+  - _dirname_log_: name of the parent directory where the images will be saved, if _save_images_p_ is non-zero. Within the directory, the child directories D/, I/, and R/ must be made. (default: "Data/")
+  - _topic_name_: topic name of PC2 to subscribe to. (default: "/camera/depth_registered/points")
+  - _sensor_name_: name of the sensor publishing the PC2 (default: "unknown")
   - _experimental_doublecheck_p_: If non-zero, exec the experimental
     classfication. (default: 0)
 
+## Subscribed Topics
+
+### /camera/depth_registered/points ([sensor_msgs/PointCloud2])
+
+* Orginized PC2 messages, which have a width and height of at least two.
 ## Published Topics
 
-### /emulated_srs/obstacles
+### /emulated_srs/obstacle ([emulated_srs/Obstacle])
 
-* List of obstacles detected on a subscribed distance image.
-* The 3D coordinates of the obstacle are shown in the right-hand system. The
-  sensor position is the origin, the z axis is the upward direction, and the x
-  axis is the optical axis of the sensor. The units are in merters.
-* An example of published topic messages;
+* An obstacle detected
+* The 3D coordinates of the obstacle are specified tf and frame_id.
+* Example
 
-        $ rostopic echo -n 1 /emulated_srs/obstacles
-        ---
-        obstacles: 
-          - 
-            n: 0                        # numbering
-            stamp:                      # time of the detection
-              secs: 1569300407
-              nsecs: 309263605
-            type: "person"              # object class by YOLO
-            point:                      # upper-left-front of
-              x: 0.51700001955          #     the 3D bounding box
-              y: 0.0526745580137
-              z: 0.309713751078
-            scale:                      # dims of the bounding box
-              x: 0.427000075579
-              y: 0.487814188004
-              z: 0.640797376633
-            confidence: 0.999856948853  # confidence by YOLO
-          - 
-            n: 1
-            stamp: 
-              secs: 1569300407
-              nsecs: 309263605
-            type: "unknown"
-            point: 
-              x: 1.44900012016
-              y: 0.799512386322
-              z: 0.294261574745
-            scale: 
-              x: 0.0489998795092
-              y: 0.0868123173714
-              z: 0.0640079528093
-            confidence: 0.0
+      $ rostopic echo -n 1 /emulated_srs/obstacle
+      header: 
+        seq: 0
+        stamp:                     # copied from the PC2
+          secs: 1626834032
+          nsecs:  49269199
+        frame_id: "camera_color_optical_frame"    # from the PC2
+      n: 0                         # obstacle num in the frame
+      position_3D:                 # at front, upper, left vertex
+        x: -0.060076452791690826   #   of the bounding cuboid
+        y: -0.02606579288840294
+        z: 1.2140001058578491
+      dimensions_3D:               # of the bounding cuboid
+        x: 0.23947076499462128
+        y: 0.6017187237739563
+        z: 0.28299999237060547
+      centroid_3D:                 # of the points
+        x: 0.060652490705251694    #   NOT of the bounding cuboid
+        y: 0.197583869099617
+        z: 1.2704710960388184
+      position_2D:                 # of the bounding box
+        x: 301.0
+        y: 228.0
+      dimensions_2D:               # of the bounding box
+        x: 115.0
+        y: 251.0
+      centroid_2D:                 # of the points
+        x: 60.65249252319336
+        y: 197.5838623046875
+      n_points: 19902              # num of the points
+      n_points_within: 0           #   within the correct region
+      filename_saved: "20210721_112032_49269199.png"
+      type_class: "unknown"
+      confidence_class: 0.0
+      ---
+### /emulated_srs/image_depth_classified ([sensor_msgs/Image])
 
-### /emulated_srs/image_depth_classified
-
-* Distance images overwritten with the results of the obstacle detection and
+* Depth images overwritten with the results of the obstacle detection and
   the optional object classification by YOLO
 
-### /emulated_srs/image_yolo
+### /emulated_srs/image_yolo ([sensor_msgs/Image])
 
 * RGB images overwritten with the results of the object detection and the
   optional object classification by YOLO
 
-### /emulated_srs/visualization_marker
+### /emulated_srs/visualization_marker ([visualization_msgs/Maker])
 
 * [Marker](http://wiki.ros.org/rviz/DisplayTypes/Marker) for rviz
 
+### /emulated_srs/setup_experiment ([emulated_srs/ExpSetup])
+
+* Latched topic for broadcasting the experimental setup
 ## License
 
 * [MIT](https://opensource.org/licenses/mit-license.php)
