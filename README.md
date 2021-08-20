@@ -69,25 +69,21 @@
 
 4. Update the mask image, if necessary.
 
-       cd ~/catkin_make/devel/lib/emulated_srs
-       rm MASK.png
-       ./makeMask 320 0 320 480    # mask for the right half of a VGA image
+        cd ~/catkin_make/devel/lib/emulated_srs
+        rm MASK.png
+        ./makeMask 320 0 320 480    # mask for the right half of a VGA image
 
 ## Usage
 
 1. Run the sensor package to publish the organized PC2 messages;
 
-   * for freenect_launch:
-
-         roslaunch freenect_launch freenect.launch
-
-   * for realsense-ros:
-
-         roslaunch realsense2_camera rs_rgbd.launch
+        roslaunch freenect_launch freenect.launch        # for freenect_launch
+        
+        roslaunch realsense2_camera rs_rgbd.launch       # for realsense-ros
 
 2. Run obstacle_classifier.
 
-       roslaunch emulated_srs obstacle_classifier.launch
+        roslaunch emulated_srs obstacle_classifier.launch
 
 * ROS launch parameters
   - _zkey_: The limit distance of detection. Pixels that are farther away from
@@ -133,9 +129,8 @@
 
 ### /emulated_srs/obstacle ([emulated_srs/Obstacle])
 
-* An obstacle detected
-* The 3D coordinates of the obstacle are specified tf and frame_id.
-* Example
+* Information of the detected obstacle
+* Example:
 
         $ rostopic echo -n 1 /emulated_srs/obstacle
         header:                      # stamp and frame_id copied from the PC2
