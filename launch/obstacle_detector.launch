@@ -13,6 +13,10 @@
   <arg name="display_images_p" default="1" />
   <arg name="publish_images_p" default="0" />
   <arg name="publish_markers_p" default="0" />
+  <arg name="save_images_p" default="0" />
+
+  <arg name="dirname_log" default="Data/" />
+  <arg name="filename_mask" default="MASK.png" />
   
   <node name="obstacle_detector" pkg="emulated_srs" type="obstacle_detector"
 	output="screen" cwd="node">
@@ -27,6 +31,9 @@
     <param name="display_images_p" value="$(arg display_images_p)" />
     <param name="publish_images_p" value="$(arg publish_images_p)" />
     <param name="publish_markers_p" value="$(arg publish_markers_p)" />
+    <param name="filename_mask" value="$(arg filename_mask)" />
+    <param name="dirname_log" value="$(arg dirname_log)" />
+    <param name="save_images_p" value="$(arg save_images_p)" />
   </node>
 </launch>
  

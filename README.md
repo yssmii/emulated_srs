@@ -111,6 +111,7 @@
   - _save_images_p_: if non-zero, subscribed PC2s are saved as depth and RGB
      image files, and detection results are saved as overwritten depth images.
      (default: 0)
+  - _filename_mask_: name of the mask file. (defaule: "MASK.png")
   - _dirname_log_: name of the parent directory where the images will be saved,
     if save_images_p is non-zero. Within the directory, the child directories
     D/, I/, and R/ must be made. (default: "Data/")
