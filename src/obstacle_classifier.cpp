@@ -73,6 +73,7 @@ int emulated_srs::ObstacleClassifier::execObstacleDetection(void)
   return object_count;
 }
 
+/*
 void emulated_srs::ObstacleClassifier::displayAll(void)
 {
   if(!(param_display_images_p_ || param_publish_images_p_)) return;
@@ -89,6 +90,59 @@ void emulated_srs::ObstacleClassifier::displayAll(void)
   {
     map_for_showing_rgb_data_.display("Yolo", 10);
     map_for_showing_depth_data_.display("Depth", 10);
+  }
+
+  return;
+  
+}
+*/
+
+void emulated_srs::ObstacleClassifier::displayAll(void)
+{
+  if(!(param_display_images_p_ ||
+       param_publish_images_p_ ||
+       param_save_images_p_))
+    return;
+
+  if(!has_rgb_data_)   return;
+  
+  // Copy the depth image with rtection results for display
+  map_for_detection_.normalize(map_for_showing_depth_data_);
+
+  // Copy the current RGB image.
+  map_for_showing_rgb_data_ = *(map_for_rgb_display_.getImageData<unsigned char>());
+
+  // Overwrite the depth image with the obstacle reasons.
+  map_for_detection_.drawObstacleRegionWithLabel(map_for_showing_depth_data_);
+  map_for_classification_.drawBoundingBox(map_for_showing_rgb_data_);
+
+  if (param_display_images_p_)
+  {
+    // Display the images.
+    //map_for_showing_rgb_data_.display("RGB", -1);
+    map_for_showing_rgb_data_.display("Yolo", -1);
+    map_for_detection_.display("Depth",-1);
+    map_for_showing_depth_data_.display("Detection", 10);
+  }
+
+  if(param_save_images_p_)
+  {
+    // save the depth image
+    map_for_detection_.setWriteImage(true,
+                                     param_dname_log_ + LOGDIR_DEPTH);
+    map_for_detection_.writeImage(basename_to_save_images_);
+
+    // save the depth image with detection result
+    map_for_showing_depth_data_.setWriteImage(true,
+                                    param_dname_log_ + LOGDIR_DETECTION);
+    map_for_showing_depth_data_.writeImage(basename_to_save_images_);
+
+    // save the rgb image
+    map_for_showing_rgb_data_.setWriteImage(true, 
+                                    param_dname_log_ + LOGDIR_INTENSITY);
+    map_for_showing_rgb_data_.writeImage(basename_to_save_images_);
+    
+    ROS_INFO_ONCE("SAVED: %s", (param_dname_log_ + LOGDIR_DEPTH + basename_to_save_images_).c_str());
   }
 
   return;
