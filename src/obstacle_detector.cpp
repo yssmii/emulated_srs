@@ -115,7 +115,7 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
   ROS_INFO("display_images_p: %d", param_display_images_p_);
   ROS_INFO("publish_images_p: %d", param_publish_images_p_);
   ROS_INFO("publish_markers_p: %d", param_publish_markers_p_);
-  ROS_INFO("save_images_p: %d", param_save_images_p_);
+  ROS_INFO("XXsave_images_p: %d", param_save_images_p_);
   ROS_INFO("experimental_doublecheck_p: %d", param_doublecheck);
   param_experimental_doublecheck_p_ = param_doublecheck;
 
@@ -608,6 +608,7 @@ emulated_srs::ObstacleDetector::execObstacleDetection(void)
   int object_count = 0;
   object_count = map_for_detection_.detect();
   count_detection_++;
+  ROS_INFO("Detector: %d", count_detection_);
   
   return object_count;
 }

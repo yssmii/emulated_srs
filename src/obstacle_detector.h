@@ -101,12 +101,12 @@ protected:
   //!障害物検出結果を可視化した画像をpublishする
   virtual int publishImagesMessage(void);
 
+  virtual int execObstacleDetection(void);
+
 private:
   //!点群データをサブスクライブした際に呼び出されるコールバック関数
   void pc2Callback(
     const sensor_msgs::PointCloud2ConstPtr &pc2);
-
-  int execObstacleDetection(void);
 
   //!点群データを2次元のマップデータに変換する
   bool convertPC2ToMapData(

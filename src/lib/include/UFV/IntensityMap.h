@@ -210,11 +210,20 @@ void
 IntensityMap::setData(const UFV::ImageData<T> &img)
 {
   T *pdata=img.getData();
-  m_type = transType(pdata);
+  Type type = transType(pdata);
   int width = img.width();
   int height = img.height();
   int nchannels = img.nchannels();
   //*m_image = img;
+
+  if(width != this->width() || height != this->height() ||
+     nchannels != this->nchannels() || type != this->type())
+  {
+    if(m_image != 0) delete m_image;
+    m_image = new UFV::ImageData<T>(width,height,nchannels);
+  }
+
+  m_type = type;
 
   ((UFV::ImageData<T>*)m_image)->setData(width, height, nchannels, pdata);
   

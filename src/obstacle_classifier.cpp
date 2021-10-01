@@ -55,6 +55,11 @@ int emulated_srs::ObstacleClassifier::execObstacleDetection(void)
 
   //UFV::ImageData<unsigned char> mimg =*(map_for_rgb_display_.getImageData<unsigned char>());
   //mimg.display("CP", -1);
+  /*map_for_classification_.setData<unsigned char>(mimg.width(),
+                                                 mimg.height(),
+                                                 mimg.nchannels(),
+                                                 mimg.getData()
+                                                 );*/
   //map_for_classification_.setData<unsigned char>(mimg);
   map_for_classification_.setData<unsigned char>(*(map_for_rgb_display_.getImageData<unsigned char>()));
 
@@ -113,14 +118,16 @@ void emulated_srs::ObstacleClassifier::displayAll(void)
   map_for_showing_rgb_data_ = *(map_for_rgb_display_.getImageData<unsigned char>());
 
   // Overwrite the depth image with the obstacle reasons.
-  map_for_detection_.drawObstacleRegionWithLabel(map_for_showing_depth_data_);
+  map_for_detection_.setDrawLabel(true);
+  map_for_detection_.drawObstacleRegion(map_for_showing_depth_data_);
+  map_for_detection_.setDrawLabel(false);
   map_for_classification_.drawBoundingBox(map_for_showing_rgb_data_);
 
   if (param_display_images_p_)
   {
     // Display the images.
     //map_for_showing_rgb_data_.display("RGB", -1);
-    map_for_showing_rgb_data_.display("Yolo", -1);
+    map_for_showing_rgb_data_.display("Classification", -1);
     map_for_detection_.display("Depth",-1);
     map_for_showing_depth_data_.display("Detection", 10);
   }

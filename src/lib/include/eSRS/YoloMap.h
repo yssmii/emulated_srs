@@ -66,12 +66,14 @@ public:
       : m_names(0),
         m_net(0),
         m_dets(0),
+        m_nclasses(0),
         m_nboxes(0),
         m_thresh(.75)
     {
       this->load_files();
       //m_alphabets = load_alphabet();
-      m_nclasses = (m_net->layers[m_net->n-1]).classes; // m_net->n > 0 ?
+      //m_nclasses = (m_net->layers[m_net->n-1]).classes; // m_net->n > 0 ?
+      //m_nclasses = 80;
       m_obj_vec.clear();
     };
   YoloMap(const int width, const int height)
@@ -79,12 +81,14 @@ public:
         m_names(0),
         m_net(0),
         m_dets(0),
+        m_nclasses(0),
         m_nboxes(0),
         m_thresh(.75)
     {
       this->load_files();
       //m_alphabets = load_alphabet();
-      m_nclasses = (m_net->layers[m_net->n-1]).classes; // m_net->n > 0 ?
+      //m_nclasses = (m_net->layers[m_net->n-1]).classes; // m_net->n > 0 ?
+      //m_nclasses = 80;
       m_obj_vec.clear();
     };
   ~YoloMap(void) {};

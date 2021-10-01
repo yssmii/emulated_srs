@@ -319,6 +319,8 @@ eSRS::YoloMap::drawBoundingBox(UFV::ImageData<unsigned char> &bbox) const
 int
 eSRS::YoloMap::setLabeledObjects(void)
 {
+  //fprintf(stderr, "setLabeledObjects: %f, %d, %d\n", m_thresh, m_nboxes, m_nclasses);
+  
   if(m_thresh <= 0.5) return 0;
 
   int ocount=0;
@@ -334,7 +336,7 @@ eSRS::YoloMap::setLabeledObjects(void)
         //assert(cls < 0); // m_thresh > 0.5 であれば、複数候補はありえないはず
         cls = j;
         tmp_thresh = m_dets[i].prob[j];
-        //fprintf(stdout, "* %s: %.0f%%\n", labelstr, m_dets[i].prob[j]*100);
+        //fprintf(stdout, "* %s: %.0f%%\n", m_names[cls], m_dets[i].prob[j]*100);
       }
     }
     
@@ -434,7 +436,16 @@ eSRS::YoloMap::load_files(void)
   
   list *options = read_data_cfg(const_cast<char*>(DEFAULT_DATAFILE.c_str()));
   char *name_list = option_find_str(options, "names", "data/names.list");
+  //printf("name_list: %s\n", name_list);
+  
   m_names = get_labels(name_list);
+  int i=0;
+  while(m_names[i]!=0)
+  {
+    printf("[INFO] class[%d]: %s\n",i, m_names[i]);
+    i++;
+  }
+  m_nclasses = i;
 
   m_net = load_network(const_cast<char*>(DEFAULT_CFGFILE.c_str()),
                        const_cast<char*>(DEFAULT_WEIGHTFILE.c_str()), 0);
