@@ -5,16 +5,17 @@
 * A ROS package for obstacle detection emulating the architecture of
   Safety-Related Sensors (SRS) according to [IEC/TS
   62998-1](https://webstore.iec.ch/publication/31009).
-* It aims to provide a software platform for evaluating a variety of
-  distance-imaging sensor devices with a common mature object
-  detection algorithm.
+* It aims to provide a software platform for evaluating the object detection
+  performance of various distance-imaging sensor devices.
 * It subscribes to [organized PointCloud2
   (PC2)](https://answers.ros.org/question/234455/pointcloud2-and-pointfield/)
-  messages, detects obstacles by image processing based on [the CCL
-  algorithm](https://en.wikipedia.org/wiki/Connected-component_labeling)
+  messages, detects obstacles by an object detection algorithm based on
+  [the CCL algorithm](https://en.wikipedia.org/wiki/Connected-component_labeling)
   and publishes the detection results. Optionally, it performs obstacle
-  classification by Deep Learning.
-
+  classification by Deep Learning. For more details on the object detection
+  algorithm, please see the appendix of [the journal article](https://doi.org/10.1109/JSEN.2021.3089207).
+* Example of the detection results:
+![example of detection results](https://user-images.githubusercontent.com/27484152/135813001-05a0fd4e-b76b-4e83-90ff-c72549b75b84.png)
 ## Requirements
 
 * Ubuntu 18.04
@@ -23,8 +24,6 @@
   e.g., [freenect_launch](http://wiki.ros.org/freenect_launch),
   [realsense-ros](https://github.com/IntelRealSense/realsense-ros), etc.
 * [darknet and YOLOv3](https://pjreddie.com/darknet/) (optional)
-  - [CUDA 10.2](https://developer.nvidia.com/cuda-toolkit-archive)
-  - [CUDNN 7.6](https://developer.nvidia.com/rdp/cudnn-archive)
 
 ## ROS Nodes
 
@@ -44,6 +43,11 @@
 * Equivalent to obstacle_classifier implemented without the classification
   function. All detected obstacles are classified as "unknown".
 
+### obstacle_measurer
+
+* A ROS node that performs object detection and distance measurement. It is still
+  under development.
+
 ## Installation
 
 1. Install sensor packages.
@@ -53,7 +57,7 @@
         git clone https://github.com/pjreddie/darknet.git
         cd darknet
         export PATH_DARKNET=$(pwd)
-        <edit ./Makefile>           # GPU=1, CUDNN=1, OPENCV=1, OPENMP=1
+        <edit ./Makefile>           # GPU=1, OPENCV=1
         make
         wget https://pjreddie.com/media/files/yolov3.weights
         <edit ./cfg/yolov3.cfg>     # batch=1, subdivisions=1
@@ -77,8 +81,6 @@
 
 1. Run the sensor package to publish the organized PC2 messages;
 
-        roslaunch freenect_launch freenect.launch        # for freenect_launch
-        
         roslaunch realsense2_camera rs_rgbd.launch       # for realsense-ros
 
 2. Run obstacle_classifier.
