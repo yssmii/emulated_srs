@@ -7,7 +7,13 @@ set(CMAKE_CXX_FLAGS_RELEASE "-Wall -O2 -std=c++11")
    
 set(CMAKE_VERBOSE_MAKEFILE 1)
 
-option(WITH_YOLO "With Yolo v3" ON)
+option(WITH_YOLO "YOLO" ON)
+option(WITH_YOLOV4 "YOLOv4" ON)
+option(WITH_DARKNETAB "darknet AlexeyAB" ON)
+if(WITH_YOLOV4)
+  set(WITH_YOLO ON)
+  set(WITH_DARKNETAB ON)
+endif(WITH_YOLOV4)
 
 find_package(catkin REQUIRED
   COMPONENTS
@@ -50,22 +56,34 @@ if(WITH_YOLO)
   endif()
   set(CUDA_LIBRARY_DIR ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
 
-  if(DEFINED $ENV{PATH_DARKNET})
+  if(DEFINED ENV{PATH_DARKNET})
     set(PATH_YOLO_DIR $ENV{PATH_DARKNET})
   else()
     set(PATH_YOLO_DIR $ENV{HOME}/src/darknet)
   endif()
 
+  #message( STATUS "DEBUG: PATH_YOLO_DIR: " ${PATH_YOLO_DIR} )
+
   set(CUDNN_LIBS
-    -L${CUDA_LIBRARY_DIR} -lcuda -lcudart -lcublas -lcurand -lcudnn)
-  
-  set(YOLO_LIBRARIES
-    ${YOLO_LIBRARIES}
-    ${PATH_YOLO_DIR}/libdarknet.a -fopenmp
-    ${CUDA_CUDA_LIBRARY}
-    ${CUDA_CUDART_LIBRARY}
-    ${CUDNN_LIBS}
-    )
+    -L${CUDA_LIBRARY_DIR} -lcuda -lcudart -lcublas -lcurand)
+
+  if(WITH_DARKNETAB)
+    set(YOLO_LIBRARIES
+      ${YOLO_LIBRARIES}
+      -L${PATH_YOLO_DIR} -ldarknet
+      ${CUDA_CUDA_LIBRARY}
+      ${CUDA_CUDART_LIBRARY}
+      ${CUDNN_LIBS}
+      )
+  else()
+    set(YOLO_LIBRARIES
+      ${YOLO_LIBRARIES}
+      ${PATH_YOLO_DIR}/libdarknet.a
+      ${CUDA_CUDA_LIBRARY}
+      ${CUDA_CUDART_LIBRARY}
+      ${CUDNN_LIBS}
+      )
+  endif()
 
   include_directories(
     ${CUDA_INCLUDE_DIRS}

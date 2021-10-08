@@ -21,13 +21,21 @@
 #include "eSRS/YoloMap.h"
 
 #include <opencv2/opencv.hpp> 
-#include <opencv2/highgui/highgui.hpp> 
+#include <opencv2/highgui/highgui.hpp>
+
+#include "network.h"
+#include "image.h"
+#include "option_list.h"
 
 static const std::string YOLO_DIR = PATH_YOLO_DIR;
 static const std::string DEFAULT_DATAFILE = YOLO_DIR + "/cfg/coco.data";
+#ifdef WITH_YOLOV4
+static const std::string DEFAULT_CFGFILE = YOLO_DIR + "/cfg/yolov4.cfg";
+static const std::string DEFAULT_WEIGHTFILE = YOLO_DIR+ "/yolov4.weights";
+#else
 static const std::string DEFAULT_CFGFILE = YOLO_DIR + "/cfg/yolov3.cfg";
 static const std::string DEFAULT_WEIGHTFILE = YOLO_DIR+ "/yolov3.weights";
-
+#endif
 static float colors[6][3] = { {1,0,1},         // magenta in {B,G,R}, 
                               {0.75,0.75,0.5}, // replacing {0,0,1}, red, which indicates "unknown"
                               {0,1,1},
@@ -207,7 +215,7 @@ get_yoloimage(UFV::ImageData<unsigned char> *src,
   
 
 static float
-get_color(int c, int x, int max)
+get_color_(int c, int x, int max)
 {
   float ratio = ((float)x/max)*5;
   int i = floor(ratio);
@@ -258,9 +266,9 @@ eSRS::YoloMap::drawBoundingBox(UFV::ImageData<unsigned char> &bbox) const
     if(cls >= 0)
     {
       int offset = cls*123457 % m_nclasses;
-      float red = get_color(2, offset, m_nclasses) * 255;
-      float green = get_color(1, offset, m_nclasses) * 255;
-      float blue = get_color(0, offset, m_nclasses) * 255;
+      float red = get_color_(2, offset, m_nclasses) * 255;
+      float green = get_color_(1, offset, m_nclasses) * 255;
+      float blue = get_color_(0, offset, m_nclasses) * 255;
       cv::Scalar rgb(blue, green, red);
       
       box b = m_dets[i].bbox;
@@ -352,9 +360,9 @@ eSRS::YoloMap::setLabeledObjects(void)
       yobj.labelstr = m_names[cls];
       
       int offset = cls*123457 % m_nclasses;
-      yobj.color.r = get_color(2, offset, m_nclasses) * 255;
-      yobj.color.g = get_color(1, offset, m_nclasses) * 255;
-      yobj.color.b = get_color(0, offset, m_nclasses) * 255;
+      yobj.color.r = get_color_(2, offset, m_nclasses) * 255;
+      yobj.color.g = get_color_(1, offset, m_nclasses) * 255;
+      yobj.color.b = get_color_(0, offset, m_nclasses) * 255;
 
       box b = m_dets[i].bbox;
       cv::Point p1, p2;
@@ -407,7 +415,7 @@ eSRS::YoloMap::detect(void)
   //exit(0);
 
   float *X = sized.data;
-#ifdef _WIN32
+#ifdef WITH_DARKNETAB
   network_predict(*m_net, X);
   m_dets = get_network_boxes(m_net, w, h, m_thresh, hier_thresh, 0, 1,
                              &m_nboxes, 1);

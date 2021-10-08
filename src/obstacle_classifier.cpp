@@ -78,29 +78,6 @@ int emulated_srs::ObstacleClassifier::execObstacleDetection(void)
   return object_count;
 }
 
-/*
-void emulated_srs::ObstacleClassifier::displayAll(void)
-{
-  if(!(param_display_images_p_ || param_publish_images_p_)) return;
-  
-  // 輝度画像を表示
-  //map_for_showing_rgb_data_ = *(map_for_rgb_display_.getImageData<unsigned char>());
-  map_for_showing_rgb_data_ = *(map_for_classification_.getImageData<unsigned char>());
-
-  map_for_detection_.drawObstacleRegion(map_for_showing_depth_data_);
-  map_for_classification_.drawBoundingBox(map_for_showing_rgb_data_);
-  //map_for_detection_.drawBoundingBox(map_for_showing_rgb_data_);
-
-  if (param_display_images_p_)
-  {
-    map_for_showing_rgb_data_.display("Yolo", 10);
-    map_for_showing_depth_data_.display("Depth", 10);
-  }
-
-  return;
-  
-}
-*/
 
 void emulated_srs::ObstacleClassifier::displayAll(void)
 {
