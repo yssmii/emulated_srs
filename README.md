@@ -23,7 +23,7 @@
 * Sensor package that publishes organized PC2 messages,
   e.g., [freenect_launch](http://wiki.ros.org/freenect_launch),
   [realsense-ros](https://github.com/IntelRealSense/realsense-ros), etc.
-* [darknet and YOLOv3](https://pjreddie.com/darknet/) (optional)
+* darknet for [YOLOv3](https://pjreddie.com/darknet/) or [YOLOv4](https://github.com/AlexeyAB/darknet) (optional)
 
 ## ROS Nodes
 
@@ -51,7 +51,24 @@
 ## Installation
 
 1. Install sensor packages.
-2. Build [YOLOv3](https://pjreddie.com/darknet/install/).（optional）
+2. Build YOLO. This step is optional, so it can be skipped by -DWITH_YOLO=OFF at
+   catkin_make.
+
+   For [YOLOv4](https://github.com/AlexeyAB/darknet):
+
+        cd ~/src                    # if build in $HOME/src/darknetAB
+        git clone https://github.com/AlexeyAB/darknet darknetAB
+        cd darknetAB
+        export PATH_DARKNET=$(pwd)
+        export LD_LIBRARY_PATH=$(pwd):$LD_LIBRARY_PATH
+        <edit ./Makefile>           # GPU=1, OPENCV=1, LIBSO=1
+        make
+        wget https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights
+        <edit ./cfg/yolov4.cfg>     # batch=1, subdivisions=1
+        <edit ./cfg/coco.data>      # names = "your PATH_DARKNET"/data/coco.names
+        ./darknet detect cfg/yolov4.cfg yolov4.weights data/dog.jpg   # test
+
+    For [YOLOv3](https://pjreddie.com/darknet/install/):
 
         cd ~/src                    # if build in $HOME/src/darknet
         git clone https://github.com/pjreddie/darknet.git
@@ -61,6 +78,7 @@
         make
         wget https://pjreddie.com/media/files/yolov3.weights
         <edit ./cfg/yolov3.cfg>     # batch=1, subdivisions=1
+        <edit ./cfg/coco.data>      # names = "your PATH_DARKNET"/data/coco.names
         ./darknet detect cfg/yolov3.cfg yolov3.weights data/dog.jpg   # test
 
 3. Build emulated_srs.
@@ -69,7 +87,7 @@
         git clone http://github.com/yssmii/emulated_srs.git
         catkin_init_workspace
         cd ..
-        catkin_make                 # add -DWITH_YOLO=OFF, without YOLOv3
+        catkin_make                 # -DWITH_YOLO=OFF or -DWITH_YOLOV4=OFF is optional.
 
 4. Update the mask image, if necessary.
 
