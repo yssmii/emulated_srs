@@ -20,30 +20,8 @@
 
 #cmakedefine HAVE_USLEEP 1
 
-#cmakedefine WITH_OPENNI2 1
-
-#cmakedefine WITH_STRUCTURESENSOR 1
-#cmakedefine WITH_ASTRA 1
-#cmakedefine WITH_XTION2 1
-#cmakedefine WITH_KINECT_OPENNI2 1
-
-#cmakedefine WITH_KINECT_SDK1 1
-
-#cmakedefine WITH_KINECT2 1
-
-#cmakedefine WITH_ZED 1
-
-#cmakedefine WITH_PIXELSOLEIL 1
-
-#cmakedefine WITH_REALSENSE_SR300 1
-#cmakedefine WITH_REALSENSE_R200 1
-
-#cmakedefine WITH_REALSENSE_D435 1
-
-#cmakedefine WITH_YVT35 1
-#cmakedefine WITH_FX10 1
-#cmakedefine WITH_USBCAM 1
-#cmakedefine WITH_USBXI16P 1
+#cmakedefine WITH_DARKNETAB 1
+#cmakedefine WITH_YOLOV4 1
 
 #cmakedefine PATH_YOLO_DIR "@PATH_YOLO_DIR@"
 

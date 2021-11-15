@@ -98,14 +98,6 @@ add_custom_command(TARGET region_maker POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/share/MASK.png $<TARGET_FILE_DIR:region_maker>
   )
 
-if(WITH_YOLO)
-  add_custom_command(TARGET obstacle_classifier POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:obstacle_classifier>/data
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/share/coco.names $<TARGET_FILE_DIR:obstacle_classifier>/data
-    )
-endif(WITH_YOLO)
-  
 add_subdirectory(lib)
 add_subdirectory(util)
-#add_subdirectory(share)
 

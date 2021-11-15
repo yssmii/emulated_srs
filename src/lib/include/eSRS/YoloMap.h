@@ -24,7 +24,7 @@
 
 #define GPU 1
 #define OPENCV 1
-#define CUDNN 1
+//#define CUDNN 1
 
 #define BLOCK 512
 
@@ -44,14 +44,19 @@
 extern "C" {  
 #ifdef _WIN32
 #define _TIMESPEC_DEFINED
+
+#ifndef WITH_DARKNETAB
+#define WITH_DARKNETAB 1
+#endif  
+
 //#include "darknet.h"
+#else
+//#include "darknet.h"
+#endif
+
 #include "network.h"
 #include "image.h"
 #include "option_list.h"
-
-#else
-#include "darknet.h"
-#endif
 }
 
 namespace eSRS
