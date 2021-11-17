@@ -1,7 +1,7 @@
 <launch>
   <arg name="sensor_name"
        default="D435"
-       doc="D435|D455|L515|Structure|Kinect|Kinect2|Astra|LIPSDL"
+       doc="D435|D455|L515|Structure|Kinect|Kinect2|Azure|Astra|Vzense|LIPSDL"
        />
 
   <arg name="exp_distance" default="1000.0" />
@@ -70,6 +70,36 @@
       <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch">
         <arg name="publish_tf" value="true" />
       </include>
+    </group>
+
+    <group if="$(eval sensor_name=='Azure')">
+      <include file="$(find azure_kinect_ros_driver)/launch/driver.launch">
+        <arg name="color_resolution" value="720P" />
+      </include>
+      <node pkg="nodelet" type="nodelet" name="standalone_nodelet" args="manager" output="screen"/>
+      <node pkg="nodelet" type="nodelet" name="points_xyzrgb" args="load depth_image_proc/point_cloud_xyzrgb standalone_nodelet --no-bond">
+        <remap from="rgb/camera_info" to="depth_to_rgb/camera_info" />  
+        <remap from="rgb/image_rect_color" to="rgb/image_raw"/>  
+        <remap from="depth_registered/image_rect" to="depth_to_rgb/image_raw"/>  
+        <remap from="depth_registered/points" to="camera/depth_registered/points"/>
+      </node>
+    </group>
+
+    <group if="$(eval sensor_name=='Vzense')">
+      <include file="$(find vzense_camera)/launch/vzense_camera.launch">
+        <arg name="rgb_resolution" value="2" /> <!-- 640x480 -->
+        <arg name="depth_range" value="2" /> <!-- 4.4m -->
+      </include>
+      
+      <node pkg="nodelet" type="nodelet" name="nodelet_manager" args="manager" />
+
+      <node pkg="nodelet" type="nodelet" name="nodelet1"
+            args="load depth_image_proc/point_cloud_xyzrgb nodelet_manager --no-bond">
+        <remap from="rgb/camera_info" to="Vzense/color/camera_info"/>
+        <remap from="depth_registered/image_rect" to="Vzense/aligned_depth_to_color/image_raw"/>
+        <remap from="rgb/image_rect_color" to="Vzense/color/image_raw"/>    
+        <remap from="depth_registered/points" to="camera/depth_registered/points"/>
+      </node>
     </group>
 
     <group if="$(eval sensor_name=='ZED')">
