@@ -107,7 +107,9 @@
     </group>
 
     <group if="$(eval sensor_name=='LIPSDL')">
-      <include file="$(find openni2_launch)/launch/lips_DL.launch" />
+      <include file="$(find openni2_launch)/launch/lips_DL.launch">
+        <arg name="depth_registration" value="true" />
+      </include>
     </group>
   </group>
   
