@@ -45,7 +45,6 @@ const std::string emulated_srs::ObstacleDetector::LOGDIR_DETECTION = "R/";
 const std::string emulated_srs::ObstacleDetector::LOGDIR_INTENSITY = "I/";
 
 /*!
- *  @brief main function
 int main(int argc, char** argv)
 {
   ros::init (argc, argv, "obstacle_detector");
@@ -171,8 +170,6 @@ void emulated_srs::ObstacleDetector::pc2Callback(
   std::vector<eSRS::ObstacleClassified> obstacle_classified;
 
   ROS_INFO_ONCE("PC2 received: %d %d", pc2->width, pc2->height);
-
-  //timestamp_pointcloud2_subscribed_ = ros::Time::now();
 
   if(pc2->height <= 1 || pc2->width <= 1)
   {

@@ -7,12 +7,10 @@ set(CMAKE_CXX_FLAGS_RELEASE "-Wall -O2 -std=c++11")
    
 set(CMAKE_VERBOSE_MAKEFILE 1)
 
-option(WITH_YOLO "YOLO" ON)
-option(WITH_YOLOV4 "YOLOv4" ON)
-option(WITH_DARKNETAB "darknet AlexeyAB" ON)
+option(WITH_YOLO "YOLO" OFF)
+option(WITH_YOLOV4 "YOLOv4" OFF)
 if(WITH_YOLOV4)
   set(WITH_YOLO ON)
-  set(WITH_DARKNETAB ON)
 endif(WITH_YOLOV4)
 
 find_package(catkin REQUIRED
@@ -67,7 +65,7 @@ if(WITH_YOLO)
   set(CUDNN_LIBS
     -L${CUDA_LIBRARY_DIR} -lcuda -lcudart -lcublas -lcurand)
 
-  if(WITH_DARKNETAB)
+  if(WITH_YOLOV4)
     set(YOLO_LIBRARIES
       ${YOLO_LIBRARIES}
       -L${PATH_YOLO_DIR} -ldarknet
