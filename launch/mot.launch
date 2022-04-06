@@ -2,7 +2,7 @@
   <arg name="sensor_name"
        default="D435"
        doc="D435|D455|L515|Structure|Kinect|Kinect2|Azure|&#x0A;
-            Astra|Vzense|LIPSDL|ZED|ZED2|ZED2i"
+            Astra|Vzense|LIPSDL|ZED|ZED2|ZED2i|Xtion2"
        />
 
   <arg name="exp_distance" default="1000.0" />
@@ -156,7 +156,9 @@
     </group>
 
     <group if="$(eval sensor_name=='Xtion2')"> <!-- req: Ubuntu16.04 -->
-      <include file="$(find openni2_launch)/launch/openni2.launch" />
+      <include file="$(find openni2_launch)/launch/openni2.launch">
+        <arg name="depth_registration" value="true" />
+      </include>
     </group>
   </group>
   
