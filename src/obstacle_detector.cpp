@@ -120,20 +120,20 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
 
   // publishers and subscribers
   publisher_marker_ = node_handle_.advertise<visualization_msgs::Marker>(
-      "/emulated_srs/visualization_marker", 1000);
+      "visualization_marker", 1000);
 
   publisher_obstacle_ = node_handle_.advertise<emulated_srs::Obstacle>(
-      "/emulated_srs/obstacle", 1000);
+      "obstacle", 1000);
 
   publisher_image_depth_ = image_transport_.advertise(
-      "/emulated_srs/depth/image_raw", 10);
+      "depth/image_raw", 10);
 
   publisher_image_rgb_ = image_transport_.advertise(
-      "/emulated_srs/color/image_raw", 10);
+      "color/image_raw", 10);
 
   publisher_exp_setup_ =
     node_handle_.advertise<emulated_srs::ExpSetup>(
-      "/emulated_srs/setup_experiment", 1, true); // enable latch
+      "setup_experiment", 1, true); // enable latch
 
   ROS_INFO("publishers: OK");
 

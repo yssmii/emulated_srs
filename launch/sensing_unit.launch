@@ -9,7 +9,7 @@
 
   <arg name="exp_distance" default="1000.0" />
 
-  <arg name="record_p" default="1" />
+  <arg name="record_p" default="0" />
 
   <arg name="fps" default="4" />
 
@@ -141,17 +141,14 @@
 
     <node name="throttle" pkg="topic_tools" type="throttle"
           args="messages /sensing_unit/camera/depth_registered/points
-                $(arg fps)
-                /sensing_unit/throttle/points" />
+                $(arg fps)" />
 
     <group if="$(arg record_p)">
       <node name="record_points" pkg="rosbag" type="record" output="screen"
             args="-o $(arg dirname_data)/$(arg sensor_name)
                   --split --size=4000
-                  /camera/depth_registered/points
+                  /sensing_unit/camera/depth_registered/points_throttle
                   /tf /tf_static">
-            <remap from="/camera/depth_registered/points"
-                   to="/sensing_unit/throttle/points" />
       </node>
     </group>
     
