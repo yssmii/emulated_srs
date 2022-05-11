@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 
 project(emulated_srs)
 
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_FLAGS_RELEASE "-Wall -O2 -std=c++11")
-   
+
 set(CMAKE_VERBOSE_MAKEFILE 1)
 
 option(WITH_YOLO "YOLO" OFF)
@@ -92,7 +92,10 @@ if(WITH_YOLO)
 
 endif()
 
-#add_service_files(FILES WordCount.srv)
+add_service_files(
+  FILES 
+  SetMask.srv
+  )
 
 #add_action_files(DIRECTORY action FILES Sample.action)
 add_message_files(
@@ -110,6 +113,7 @@ add_message_files(
 generate_messages(
   DEPENDENCIES
   std_msgs
+  sensor_msgs
   geometry_msgs
   )
 

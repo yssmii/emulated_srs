@@ -26,6 +26,7 @@
 #include <eSRS/ClassificationMap.h>
 
 #include <emulated_srs/Obstacle.h>
+#include <emulated_srs/SetMask.h>
 
 #include "intensity_map.h"
 
@@ -75,7 +76,10 @@ protected:
                              const int height,
                              const int point_step);
 
+  virtual void prepareDisplayAndPublish(void);
+
   virtual void displayAll(void);
+  virtual void saveAll(void);
 
   virtual void publishExpSetup(void);
   
@@ -134,6 +138,8 @@ private:
 
   void maskMap(void);
 
+  bool setMask(emulated_srs::SetMask::Request &req,
+                emulated_srs::SetMask::Response &res);
 
 public:
   std::string getLocalTimeString(ros::Time &rostime) const;
@@ -156,6 +162,7 @@ protected:
 
   //! depth and RGB image data for displaying
   UFV::ImageData<unsigned char> map_for_showing_depth_data_;
+  UFV::ImageData<unsigned char> map_for_showing_depth_data_labeled_;
   UFV::ImageData<unsigned char> map_for_showing_rgb_data_;
 
   //! parameters for the obstacle detection
@@ -189,9 +196,13 @@ private:
   //! ROS subscriber
   ros::Subscriber subscriber_;
 
+  //! ROS service server
+  ros::ServiceServer service_set_mask_;
+
   //! ROS publishers
   ros::Publisher publisher_marker_;
   image_transport::Publisher publisher_image_depth_;
+  image_transport::Publisher publisher_image_depth_labeled_;
   image_transport::Publisher publisher_image_rgb_;
 
 protected:

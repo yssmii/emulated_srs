@@ -30,6 +30,7 @@
 
 #include <emulated_srs/Obstacle.h>
 #include <emulated_srs/ExpSetup.h>
+#include <emulated_srs/SetMask.h>
 
 #include "UFV/utils.h"
 #include "obstacle_detector.h"
@@ -128,6 +129,9 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
   publisher_image_depth_ = image_transport_.advertise(
       "depth/image_raw", 10);
 
+  publisher_image_depth_labeled_ = image_transport_.advertise(
+      "depth_labeled/image_raw", 10);
+
   publisher_image_rgb_ = image_transport_.advertise(
       "color/image_raw", 10);
 
@@ -136,6 +140,9 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
       "setup_experiment", 1, true); // enable latch
 
   ROS_INFO("publishers: OK");
+
+  service_set_mask_ =
+    node_handle_.advertiseService("set_mask", &emulated_srs::ObstacleDetector::setMask, this);
 
   //timestamp_pointcloud2_subscribed_ = ros::Time::now();
 
@@ -146,15 +153,54 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
 
 }
 
+bool emulated_srs::ObstacleDetector::setMask(
+    emulated_srs::SetMask::Request &req,
+    emulated_srs::SetMask::Response &res)
+{
+  //ROS_WARN("setMask: %d", req.words);
+  ROS_WARN("setMask:");
+
+  cv::Mat mask;
+  try
+  {
+    mask = cv_bridge::toCvCopy(req.mask, sensor_msgs::image_encodings::TYPE_8UC1)->image;
+  }
+  catch(const std::exception& e)
+  {
+    ROS_WARN("cv_bridge exception: %s", e.what());
+  }
+  cv::imshow("mask received",mask);
+  cv::waitKey(1);
+
+  UFV::ImageData<unsigned char> maskimg;
+  cv::Size size = mask.size();
+
+  maskimg.setData(size.width, size.height, 1, mask.ptr());
+
+  maskimg.setWriteImage(true, param_dname_log_);
+  std::string maskname = "MASK_" + param_name_sensor_ + basename_to_save_images_;
+  maskimg.writeImage(maskname);
+
+  ROS_INFO("MASK saved: %s", (param_dname_log_ + maskname).c_str());
+
+  map_for_detection_.setMaskImage(maskimg);
+  param_use_mask_p_ = 1;
+
+  ROS_INFO("MASK set successfully:");
+
+  res.file_saved = param_dname_log_ + maskname;
+  
+  return true;
+}
 
 /*!
  * @if jp
  *
- * @brief callback function at sbscribing PC2 data
+ * @brief callback function at subscribing PC2 data
  *
  * - Convert the PC2 data to depth and RGB images
  * - Exec obstacle detection
- * - Publish objstacle information as ClassifiledObstacle
+ * - Publish obstacle information as ClassifiedObstacle
  *
  * @param[in] pc2 Organized PC2 data
  * @return
@@ -213,7 +259,7 @@ void emulated_srs::ObstacleDetector::pc2Callback(
   maskMap();
   ROS_INFO_ONCE("masking completed");
 
-  // exec obect detection
+  // exec obstacle detection
   object_count = execObstacleDetection();
   //map_for_detection_.display("Det", -1);
 
@@ -226,8 +272,11 @@ void emulated_srs::ObstacleDetector::pc2Callback(
 
   timestamp_detection_result_published_ = ros::Time::now();
 
-  // exec displaying and saving
+  prepareDisplayAndPublish();
+
+// exec displaying and saving
   displayAll();
+  saveAll();
 
   // exec publishing
   publishAll(obstacle_classified, object_count);
@@ -295,6 +344,7 @@ void emulated_srs::ObstacleDetector::reshapeMap(
   ROS_INFO_ONCE("ClassificationMap");
 
   map_for_showing_depth_data_.reshape(width, height, IMAGE_N_CHANNELS);  
+  map_for_showing_depth_data_labeled_.reshape(width, height, IMAGE_N_CHANNELS);  
   if(point_step == 32) // XYZRGB
   {
     map_for_showing_rgb_data_.reshape(width, height, IMAGE_N_CHANNELS);
@@ -605,7 +655,7 @@ emulated_srs::ObstacleDetector::execObstacleDetection(void)
   int object_count = 0;
   object_count = map_for_detection_.detect();
   count_detection_++;
-  ROS_INFO("Detector: %d", count_detection_);
+  ROS_INFO("Detector: %d, %d", count_detection_, object_count);
   
   return object_count;
 }
@@ -660,7 +710,7 @@ void emulated_srs::ObstacleDetector::publishExpSetup(void)
   return;
 }
 
-void emulated_srs::ObstacleDetector::displayAll(void)
+void emulated_srs::ObstacleDetector::prepareDisplayAndPublish(void)
 {
   if(!(param_display_images_p_ ||
        param_publish_images_p_ ||
@@ -669,6 +719,7 @@ void emulated_srs::ObstacleDetector::displayAll(void)
 
   // Copy the depth image with rtection results for display
   map_for_detection_.normalize(map_for_showing_depth_data_);
+  map_for_showing_depth_data_labeled_ = map_for_showing_depth_data_;
 
   if(has_rgb_data_)
   {
@@ -677,7 +728,8 @@ void emulated_srs::ObstacleDetector::displayAll(void)
   }
 
   // Overwrite the depth image with the obstacle reasons.
-  map_for_detection_.drawObstacleRegionWithLabel(map_for_showing_depth_data_);
+  map_for_detection_.drawObstacleRegion(map_for_showing_depth_data_);
+  map_for_detection_.drawObstacleRegionWithLabel(map_for_showing_depth_data_labeled_);
 
   // Draw the bounding boxes for the obstacles on the RGB image.
   /*
@@ -687,6 +739,11 @@ void emulated_srs::ObstacleDetector::displayAll(void)
   }
   */
 
+  return;
+}
+
+void emulated_srs::ObstacleDetector::displayAll(void)
+{
   if (param_display_images_p_)
   {
     // Display the images.
@@ -694,21 +751,31 @@ void emulated_srs::ObstacleDetector::displayAll(void)
     {
       map_for_showing_rgb_data_.display("RGB", -1);
     }
-    map_for_detection_.display("Depth",-1);
-    map_for_showing_depth_data_.display("Detection", 10);
+    //map_for_detection_.display("Depth",-1);
+    map_for_showing_depth_data_.display("Depth",-1);
+    map_for_showing_depth_data_labeled_.display("Detection", 10);
   }
 
+  return;
+}
+
+void emulated_srs::ObstacleDetector::saveAll(void)
+{
   if(param_save_images_p_)
   {
     // save the depth image
-    map_for_detection_.setWriteImage(true,
-                                     param_dname_log_ + LOGDIR_DEPTH);
-    map_for_detection_.writeImage(basename_to_save_images_);
+    //map_for_detection_.setWriteImage(true,
+    //param_dname_log_ + LOGDIR_DEPTH);
+    //map_for_detection_.writeImage(basename_to_save_images_);
+
+    map_for_showing_depth_data_.setWriteImage(true,
+                                    param_dname_log_ + LOGDIR_DEPTH);
+    map_for_showing_depth_data_.writeImage(basename_to_save_images_);
 
     // save the depth image with detection result
-    map_for_showing_depth_data_.setWriteImage(true,
+    map_for_showing_depth_data_labeled_.setWriteImage(true,
                                     param_dname_log_ + LOGDIR_DETECTION);
-    map_for_showing_depth_data_.writeImage(basename_to_save_images_);
+    map_for_showing_depth_data_labeled_.writeImage(basename_to_save_images_);
 
     if(has_rgb_data_)
     {
@@ -747,10 +814,17 @@ int emulated_srs::ObstacleDetector::publishImagesMessage(void)
 
   cv::Size dsize(map_for_showing_depth_data_.width(),
                  map_for_showing_depth_data_.height());
-  cv::Mat detimg(dsize, CV_8UC3, map_for_showing_depth_data_.data());
+  cv::Mat depimg(dsize, CV_8UC3, map_for_showing_depth_data_.data());
+
+  msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", depimg).toImageMsg();
+  publisher_image_depth_.publish(msg);
+
+  cv::Size lsize(map_for_showing_depth_data_labeled_.width(),
+                 map_for_showing_depth_data_labeled_.height());
+  cv::Mat detimg(lsize, CV_8UC3, map_for_showing_depth_data_labeled_.data());
 
   msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", detimg).toImageMsg();
-  publisher_image_depth_.publish(msg);
+  publisher_image_depth_labeled_.publish(msg);
 
   return UFV::OK;
 }
