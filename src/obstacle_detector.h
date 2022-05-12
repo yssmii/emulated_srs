@@ -76,6 +76,8 @@ protected:
                              const int height,
                              const int point_step);
 
+  virtual void setBasenameToSaveImages(void);
+
   virtual void prepareDisplayAndPublish(void);
 
   virtual void displayAll(void);
@@ -209,10 +211,10 @@ protected:
   ros::Publisher publisher_obstacle_;
   ros::Publisher publisher_exp_setup_; // experiment setup
 
-private:
   //! header of subscribed PC2
   std_msgs::Header header_pointcloud2_;
 
+private:
   //! timestamp when publishing obstacle data
   ros::Time timestamp_detection_result_published_;
 

@@ -37,10 +37,11 @@ public:
 
 private:
   void initializeMap(const int width,
-                     const int height,
-                     const int point_step);
+                      const int height,
+                      const int point_step);
   void publishExpSetup(void);
   void displayAll(void);
+  void setBasenameToSaveImages(void);
 
   int publishObstaclesMessage(
     const std::vector<eSRS::ObstacleClassified> &obs,

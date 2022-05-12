@@ -115,7 +115,7 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
   ROS_INFO("display_images_p: %d", param_display_images_p_);
   ROS_INFO("publish_images_p: %d", param_publish_images_p_);
   ROS_INFO("publish_markers_p: %d", param_publish_markers_p_);
-  ROS_INFO("XXsave_images_p: %d", param_save_images_p_);
+  ROS_INFO("save_images_p: %d", param_save_images_p_);
   ROS_INFO("experimental_doublecheck_p: %d", param_doublecheck);
   param_experimental_doublecheck_p_ = param_doublecheck;
 
@@ -147,7 +147,7 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
   //timestamp_pointcloud2_subscribed_ = ros::Time::now();
 
   subscriber_ = node_handle_.subscribe(param_name_topic_, 10,
-                                       &emulated_srs::ObstacleDetector::pc2Callback, this);
+                                        &emulated_srs::ObstacleDetector::pc2Callback, this);
 
   ROS_INFO("subscriber: OK");
 
@@ -158,37 +158,76 @@ bool emulated_srs::ObstacleDetector::setMask(
     emulated_srs::SetMask::Response &res)
 {
   //ROS_WARN("setMask: %d", req.words);
-  ROS_WARN("setMask:");
+  //ROS_WARN("setMask:");
 
-  cv::Mat mask;
-  try
+  if(req.cmd == "pause")
   {
-    mask = cv_bridge::toCvCopy(req.mask, sensor_msgs::image_encodings::TYPE_8UC1)->image;
+    if(param_use_mask_p_ == 1)
+    {
+      param_use_mask_p_ = 0;
+      res.res = "setMask: successfully paused";
+      ROS_INFO("setMask: paused");
+    }
+    else
+    {
+      res.res = "setMask: WARNING, already stopped";    
+      ROS_WARN("setMask: receive pause, but not started");
+    }
   }
-  catch(const std::exception& e)
+  else if(req.cmd == "restart")
   {
-    ROS_WARN("cv_bridge exception: %s", e.what());
+    if(param_use_mask_p_ == 1)
+    {
+      res.res = "setMask: WARNING, already started";
+      ROS_WARN("setMask: receive restart, but already started");
+    }
+    else
+    {
+      if(map_for_detection_.hasMaskImage())
+      {
+        param_use_mask_p_ = 1;
+        res.res = "setMask: successfully restarted";
+        ROS_INFO("setMask: restarted");
+      }
+      else
+      {
+        res.res = "setMask: ERROR, No MASK image";
+        ROS_INFO("setMask: No MAK image");
+      }
+    }
   }
-  cv::imshow("mask received",mask);
-  cv::waitKey(1);
+  else if(req.cmd == "start")
+  {
+    cv::Mat mask;
+    try
+    {
+      mask = cv_bridge::toCvCopy(req.mask, sensor_msgs::image_encodings::TYPE_8UC1)->image;
+    }
+    catch(const std::exception& e)
+    {
+      ROS_WARN("cv_bridge exception: %s", e.what());
+    }
+    //cv::imshow("mask received",mask);
+    //cv::waitKey(1);
 
-  UFV::ImageData<unsigned char> maskimg;
-  cv::Size size = mask.size();
+    UFV::ImageData<unsigned char> maskimg;
+    cv::Size size = mask.size();
 
-  maskimg.setData(size.width, size.height, 1, mask.ptr());
+    maskimg.setData(size.width, size.height, 1, mask.ptr());
 
-  maskimg.setWriteImage(true, param_dname_log_);
-  std::string maskname = "MASK_" + param_name_sensor_ + basename_to_save_images_;
-  maskimg.writeImage(maskname);
+    maskimg.setWriteImage(true, "");
+    std::string maskname = "MASK_" + basename_to_save_images_;
+    maskimg.writeImage(maskname);
 
-  ROS_INFO("MASK saved: %s", (param_dname_log_ + maskname).c_str());
+    ROS_INFO("setMask: saved: %s", maskname.c_str());
 
-  map_for_detection_.setMaskImage(maskimg);
-  param_use_mask_p_ = 1;
+    map_for_detection_.setMaskImage(maskimg);
+    param_use_mask_p_ = 1;
 
-  ROS_INFO("MASK set successfully:");
+    ROS_INFO("setMask: set successfully:");
 
-  res.file_saved = param_dname_log_ + maskname;
+    res.res = "setMask: saved: " + maskname;
+  }
   
   return true;
 }
@@ -220,14 +259,14 @@ void emulated_srs::ObstacleDetector::pc2Callback(
   if(pc2->height <= 1 || pc2->width <= 1)
   {
     ROS_WARN("An unorganized PC2 has subscribed: %d x %d", 
-             pc2->width, pc2->height);
+              pc2->width, pc2->height);
     return;
   }
 
   if(pc2->point_step != 32 && pc2->point_step != 16)
   {
     ROS_WARN("Unsupported point_step: %d", 
-             pc2->point_step);
+              pc2->point_step);
     return;
   }
 
@@ -253,11 +292,11 @@ void emulated_srs::ObstacleDetector::pc2Callback(
 
   // timestamp and frame_id
   header_pointcloud2_ = pc2->header;
-  basename_to_save_images_ = getLocalTimeString(header_pointcloud2_.stamp) + ".png";
+  setBasenameToSaveImages();
 
   // apply masking to the depth MAP image
   maskMap();
-  ROS_INFO_ONCE("masking completed");
+  
 
   // exec obstacle detection
   object_count = execObstacleDetection();
@@ -283,6 +322,13 @@ void emulated_srs::ObstacleDetector::pc2Callback(
 
   ROS_INFO_ONCE("published");
 
+  return;
+}
+
+void emulated_srs::ObstacleDetector::setBasenameToSaveImages(void)
+{
+  basename_to_save_images_ = param_name_sensor_ + "_"
+                              + getLocalTimeString(header_pointcloud2_.stamp) + ".png";
   return;
 }
 
@@ -325,8 +371,8 @@ void emulated_srs::ObstacleDetector::reshapeMap(
   const int point_step)
 {
   if(map_for_detection_.width() == width &&
-     map_for_detection_.height() == height &&
-     (has_rgb_data_ && (point_step == 32)))
+      map_for_detection_.height() == height &&
+      (has_rgb_data_ && (point_step == 32)))
   {
     return;
   }
@@ -384,12 +430,12 @@ bool emulated_srs::ObstacleDetector::convertPC2ToMapData(
 
   // reshape Maps, if necessary
   reshapeMap(point_cloud2->width, point_cloud2->height,
-             point_cloud2->point_step);
+              point_cloud2->point_step);
 
   //pointcloud2メッセージからx,y,z,rgbの情報が保存されている配列のオフセット情報を取り出す
   result = retrievePC2OffsetInfomation(point_cloud2,
-                                       x_offset, y_offset, z_offset,
-                                       rgb_offset);
+                                        x_offset, y_offset, z_offset,
+                                        rgb_offset);
   ROS_INFO_ONCE("offsets: %lu %lu %lu, %lu",
                 x_offset, y_offset, z_offset, rgb_offset);
   if(result == false)
@@ -399,8 +445,8 @@ bool emulated_srs::ObstacleDetector::convertPC2ToMapData(
 
   //オフセット情報をもとに点群データから深度情報の2次元マップを作る （map_for_detection_に値が入る）
   result = createDepthMapAndRGBMap(point_cloud2,
-                                   x_offset, y_offset, z_offset,
-                                   rgb_offset);
+                                    x_offset, y_offset, z_offset,
+                                    rgb_offset);
   if (result == false)
   {
     return result;
@@ -416,9 +462,9 @@ bool emulated_srs::ObstacleDetector::convertPC2ToMapData(
 */
 void emulated_srs::ObstacleDetector::maskMap()
 {
-  bool ret(false);
+  if(! param_use_mask_p_) return;
 
-  ret = map_for_detection_.hasMaskImage();
+  bool ret = map_for_detection_.hasMaskImage();
   if (ret == true)
   {
     map_for_detection_.mask();
@@ -435,6 +481,7 @@ void emulated_srs::ObstacleDetector::maskMap()
     }
   }
 
+  ROS_INFO_ONCE("masking completed");
   return;
 }
 
@@ -713,8 +760,8 @@ void emulated_srs::ObstacleDetector::publishExpSetup(void)
 void emulated_srs::ObstacleDetector::prepareDisplayAndPublish(void)
 {
   if(!(param_display_images_p_ ||
-       param_publish_images_p_ ||
-       param_save_images_p_))
+        param_publish_images_p_ ||
+        param_save_images_p_))
     return;
 
   // Copy the depth image with rtection results for display

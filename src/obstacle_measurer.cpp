@@ -165,6 +165,15 @@ int emulated_srs::ObstacleMeasurer::publishObstaclesMessage(
   return UFV::OK;
 }
 
+void emulated_srs::ObstacleMeasurer::setBasenameToSaveImages(void)
+{
+  int tdist = param_dist_testpiece_;
+  basename_to_save_images_ = param_name_sensor_ + "_"
+                            + std::to_string(tdist) + "_"
+                            + getLocalTimeString(header_pointcloud2_.stamp) + ".png";
+  return;
+}
+
 void emulated_srs::ObstacleMeasurer::displayAll(void)
 {
   this->emulated_srs::ObstacleDetector::displayAll();

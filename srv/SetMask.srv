@@ -1,3 +1,4 @@
+string cmd
 sensor_msgs/Image mask
 ---
-string file_saved
+string res

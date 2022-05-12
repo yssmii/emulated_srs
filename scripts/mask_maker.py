@@ -26,6 +26,9 @@ class MaskMaker(object):
         self._ix, self._iy = -1,-1
         self._cx, self._cy = -1,-1
 
+        self._bridge = CvBridge()
+        self._min_img = np.zeros((1,1),np.uint8)
+
     def _callback(self, msg):
         try:
             bridge = CvBridge()
@@ -55,7 +58,7 @@ class MaskMaker(object):
             self._flg_draw_rectangle = False
             self._ix, self._iy = -1,-1
             self._cx, self._cy = -1,-1
-            rospy.logwarn("Cleared")
+            rospy.logwarn("Canceled")
 
         elif k == ord('s'):
             height, width, _ = self._depth_map.shape
@@ -66,10 +69,19 @@ class MaskMaker(object):
                 cv2.imshow('mask', mask_image)
                 cv2.waitKey(1)
 
-            bridge = CvBridge()
-            imsg = bridge.cv2_to_imgmsg(mask_image, encoding="passthrough")
-            fname = self._service_mask_set(imsg)
-            rospy.logwarn("Saved: %s" % fname)
+            imsg = self._bridge.cv2_to_imgmsg(mask_image, encoding="passthrough")
+            res = self._service_mask_set("start", imsg)
+            rospy.logwarn("Sent and saved: %s" % res)
+
+        elif k == ord('p'):
+            imsg = self._bridge.cv2_to_imgmsg(self._min_img, encoding="passthrough")
+            res = self._service_mask_set("pause", imsg)
+            rospy.logwarn("Paused: %s" % res)
+
+        elif k == ord('r'):
+            imsg = self._bridge.cv2_to_imgmsg(self._min_img, encoding="passthrough")
+            res = self._service_mask_set("restart", imsg)
+            rospy.logwarn("Restarted: %s" % res)
 
         if self._flg_event_listener == False:
             cv2.setMouseCallback('mask_maker',self.set_rectangle)
