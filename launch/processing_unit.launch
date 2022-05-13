@@ -5,11 +5,11 @@
             Astra|Vzense|LIPSDL|ZED|ZED2|ZED2i|Xtion2"
        />
 
-  <arg name="exp_distance" default="1000.0" />
+  <arg name="exp_distance" default="3000.0" />
 
   <arg name="record_p" default="0" />
 
-  <arg name="zkey" default="1500.0" />
+  <arg name="zkey" default="3200.0" />
   <arg name="min_gap_of_occluding_boundary" default="50.0" />
   <arg name="min_pixels_as_object" default="500" />
   <arg name="min_overlap_rate" default="0.8" />
