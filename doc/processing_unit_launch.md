@@ -1,24 +1,38 @@
-# obstacle_classifier.launch
+# processing_unit.launch
+
+* _processing_unit.launch_ initiates the _obstacle_measurer_ node with parameter
+    settings to subscribe to PointCloud2 topics published from
+    _sensing_unit.launch_.
+* This emulates the processing unit of 
+    [the SRS architecture](/doc/SRSArchitecture.png) according to Fig.1 in IEC
+    TS 62998-1.
 
 ## Usage
 
-1. Run the sensor package to publish the organized PC2 topics;
-
-        roslaunch realsense2_camera rs_rgbd.launch       # if realsense-ros
-
-2. Run obstacle_classifier.
-
-        roslaunch emulated_srs obstacle_classifier.launch
+    roslaunch emulated_srs processing_unit.launch
 
 ## ROS args
 
+### For subscribing to topics from _sensing_unit.launch_
+
+* _intopic_: topic name of PC2 to subscribe to. (default:
+    "/sensing_unit/camera/depth_registered/points_throttle")
+
+### For experimental setup
+
+* _sensor_name_: name of the sensor (default: D435)
+* _exp_distance_: distance from the sensor optical window to the test piece
+    (default: 3000.0 [mm])
+
+### For initiating the _obstacle_measurer_ node
+
 * _zkey_: The limit distance of detection. Pixels that are farther away from
-  the sensor than this distance are excluded from the obstacle detection.
-  (default: 1500.0 [mm])
+    the sensor than this distance are excluded from the obstacle detection.
+    (default: 3000.0 [mm])
 * _min_gap_of_occluding_boundary_: The minimum distance of occluding contours.
     If the 3D distance between two pixels adjacent on a distance image is
     greater than this value, they are regarded as being contained in separate
-    objects. (default: 100.0 [mm])
+    objects. (default: 50.0 [mm])
 * _min_pixels_as_object_: Minimum obstacle size on a distance image. If smaller
     than this, it is regarded as noise.（default: 500 [pixels])
 * _min_overlap_rate_: The overlap rate on an image between an obstacle detected
@@ -29,19 +43,13 @@
 * _display_images_p_: If non-zero, detection results are visualized and
     displayed with OpenCV. (default: 1)
 * _publish_images_p_: If non-zero, detection results are visualized and
-    published. (default: 0)
+    published. (default: 1)
 * _publish_markers_p_: If non-zero, detection results are published as
     visualization markers for rviz. (default: 0)
 * _save_images_p_: if non-zero, subscribed PC2s are saved as depth and RGB
     image files, and detection results are saved as overwritten depth images.
     (default: 0)
-* _filename_mask_: name of the mask file. (defaule: "MASK.png")
+* _filename_mask_: name of the mask file. (default: "MASK.png")
 * _dirname_log_: name of the parent directory where the images will be saved,
     if save_images_p is non-zero. Within the directory, the child directories
     D/, I/, and R/ must be made. (default: "Data/")
-* _topic_name_: topic name of PC2 to subscribe to. (default:
-    "/camera/depth_registered/points")
-* _sensor_name_: name of the sensor publishing the PC2 (default: "unknown")
-* _experimental_doublecheck_p_: If non-zero, exec the experimental
-    classification. (default: 0)
-
