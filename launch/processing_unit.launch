@@ -53,19 +53,6 @@
       <param name="save_images_p" value="$(arg save_images_p)" />
     </node>
 
-    <!--
-    <group if="$(arg record_p)">
-      <node name="record_points" pkg="rosbag" type="record" output="screen"
-            args="-o $(env PWD)/$(arg sensor_name)
-                  --split --size=4000
-                  /camera/depth_registered/points
-                  /emulated_srs/obstacle
-                  /emulated_srs/setup_experiment
-                  /tf /tf_static">
-      </node>
-    </group>
-    -->
-
   </group>
 
 </launch>

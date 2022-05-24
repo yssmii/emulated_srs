@@ -743,6 +743,7 @@ void emulated_srs::ObstacleDetector::publishExpSetup(void)
 {
   // publish the experimental setup as a latch topic
   emulated_srs::ExpSetup exp_setup;
+  exp_setup.header.stamp = timestamp_detection_result_published_;
   exp_setup.name_sensor = param_name_sensor_;
   exp_setup.dist_testpiece = -1.0;
   exp_setup.fname_mask = param_use_mask_p_ ? param_fname_mask_ : "";
@@ -854,7 +855,8 @@ int emulated_srs::ObstacleDetector::publishImagesMessage(void)
                    map_for_showing_rgb_data_.height());
     cv::Mat yoloimg(ysize, CV_8UC3, map_for_showing_rgb_data_.data());
 
-    msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", yoloimg).toImageMsg();
+    //msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", yoloimg).toImageMsg();
+    msg = cv_bridge::CvImage(header_pointcloud2_, "bgr8", yoloimg).toImageMsg();
 
     publisher_image_rgb_.publish(msg);
   }
@@ -863,14 +865,16 @@ int emulated_srs::ObstacleDetector::publishImagesMessage(void)
                  map_for_showing_depth_data_.height());
   cv::Mat depimg(dsize, CV_8UC3, map_for_showing_depth_data_.data());
 
-  msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", depimg).toImageMsg();
+  //msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", depimg).toImageMsg();
+  msg = cv_bridge::CvImage(header_pointcloud2_, "bgr8", depimg).toImageMsg();
   publisher_image_depth_.publish(msg);
 
   cv::Size lsize(map_for_showing_depth_data_labeled_.width(),
                  map_for_showing_depth_data_labeled_.height());
   cv::Mat detimg(lsize, CV_8UC3, map_for_showing_depth_data_labeled_.data());
 
-  msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", detimg).toImageMsg();
+  //msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", detimg).toImageMsg();
+  msg = cv_bridge::CvImage(header_pointcloud2_, "bgr8", detimg).toImageMsg();
   publisher_image_depth_labeled_.publish(msg);
 
   return UFV::OK;

@@ -31,8 +31,7 @@ class MaskMaker(object):
 
     def _callback(self, msg):
         try:
-            bridge = CvBridge()
-            self._depth_map = bridge.imgmsg_to_cv2(msg, "bgr8")
+            self._depth_map = self._bridge.imgmsg_to_cv2(msg, "bgr8")
         except CvBridgeError as e:
             print(e)
 

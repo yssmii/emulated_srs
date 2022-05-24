@@ -107,6 +107,7 @@ add_message_files(
   #ClassifiedObstacleArray.msg
   Obstacle.msg
   ExpSetup.msg
+  Transmittance.msg
   )
 
 #generate_messages(DEPENDENCIES std_msgs actionlib_msgs)
