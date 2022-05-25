@@ -61,6 +61,7 @@ int main(int argc, char** argv)
 emulated_srs::ObstacleDetector::ObstacleDetector(void)
     :
     param_name_topic_("/camera/depth_registered/points"),
+    param_name_setup_("/experimental_setup"),
     has_rgb_data_(true),
     count_detection_(0),
     param_zkey_(TC_OPT_THRESHOLD_ZKEY),
@@ -73,9 +74,10 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
     param_publish_markers_p_(0),
     param_save_images_p_(0),
     param_experimental_doublecheck_p_(false),
-    param_name_sensor_(""),
     param_fname_mask_(TC_OPT_MASKFILE),
     param_dname_log_(TC_OPT_LOGDIR),
+    setup_name_sensor_("UNKNOWN"),
+    setup_dist_testpiece_(0.0),
     flg_initialized_p_(false),
     basename_to_save_images_("IMG.png"),
     node_handle_("~"),
@@ -103,7 +105,7 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
 
   // print them on the console for confirmation
   ROS_INFO("topic to subscribe to: %s", param_name_topic_.c_str());
-  ROS_INFO("sensor: %s", param_name_sensor_.c_str());
+  //ROS_INFO("sensor: %s", param_name_sensor_.c_str());
 
   ROS_INFO("zkey: %f", param_zkey_);
   ROS_INFO("min_gap_of_occluding_boundary: %f", param_gap_);
@@ -135,9 +137,9 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
   publisher_image_rgb_ = image_transport_.advertise(
       "color/image_raw", 10);
 
-  publisher_exp_setup_ =
-    node_handle_.advertise<emulated_srs::ExpSetup>(
-      "setup_experiment", 1, true); // enable latch
+  //publisher_exp_name_ =
+  //  node_handle_.advertise<emulated_srs::ExpSetup>(
+  //    "setup_experiment", 1, true); // enable latch
 
   ROS_INFO("publishers: OK");
 
@@ -148,6 +150,8 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
 
   subscriber_ = node_handle_.subscribe(param_name_topic_, 10,
                                         &emulated_srs::ObstacleDetector::pc2Callback, this);
+  subscriber_setup_ = node_handle_.subscribe(param_name_setup_, 1,
+                                        &emulated_srs::ObstacleDetector::setupCallback, this);
 
   ROS_INFO("subscriber: OK");
 
@@ -230,6 +234,15 @@ bool emulated_srs::ObstacleDetector::setMask(
   }
   
   return true;
+}
+
+void emulated_srs::ObstacleDetector::setupCallback(
+    const emulated_srs::ExpSetup &msg)
+{
+  setup_name_sensor_ = msg.name_sensor;
+  setup_dist_testpiece_ = msg.dist_testpiece;
+  ROS_INFO("ExpSetup: %s %.1f", setup_name_sensor_.c_str(), setup_dist_testpiece_);
+  return;
 }
 
 /*!
@@ -721,10 +734,12 @@ emulated_srs::ObstacleDetector::publishAll(
   const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
   const int object_count)
 {
+  /*
   if(count_detection_ == 1)
   {
     publishExpSetup();
-  }
+  } 
+  */
     
   publishObstaclesMessage(obstacle_classified, object_count);
 
@@ -739,6 +754,7 @@ emulated_srs::ObstacleDetector::publishAll(
   return;
 }
 
+/*
 void emulated_srs::ObstacleDetector::publishExpSetup(void)
 {
   // publish the experimental setup as a latch topic
@@ -757,6 +773,7 @@ void emulated_srs::ObstacleDetector::publishExpSetup(void)
 
   return;
 }
+*/
 
 void emulated_srs::ObstacleDetector::prepareDisplayAndPublish(void)
 {

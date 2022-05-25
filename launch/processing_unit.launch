@@ -1,7 +1,7 @@
 <launch>
-  <arg name="sensor_name" default="D435" />
+  <!-- <arg name="sensor_name" default="D455" /> -->
 
-  <arg name="exp_distance" default="3000.0" />
+  <!-- <arg name="exp_distance" default="3000.0" /> -->
 
   <!-- <arg name="record_p" default="0" /> -->
 
@@ -30,9 +30,9 @@
     <node name="measurer" pkg="emulated_srs" type="obstacle_measurer"
 	  output="screen" cwd="node">
       
-      <param name="sensor_name" value="$(arg sensor_name)" />
+      <!-- <param name="sensor_name" value="$(arg sensor_name)" /> -->
 
-      <param name="dist_testpiece" value="$(arg exp_distance)" />
+      <!-- <param name="dist_testpiece" value="$(arg exp_distance)" /> -->
 
       <param name="use_mask_p" value="$(arg use_mask_p)" />
       <!-- <param name="use_region_p" value="$(arg use_region_p)" /> -->

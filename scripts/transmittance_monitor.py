@@ -10,10 +10,15 @@ import cv2
 import numpy as np
 
 from emulated_srs.msg import Transmittance
+from emulated_srs.msg import ExpSetup
 
 class TransmittanceMonitor(object):
     def __init__(self):
         rospy.init_node('transmittance_monitor', anonymous=True)
+
+        #self._sensor_name = ""
+        #self._dist_testpiece = 0.0
+        #self._sub_exp = rospy.Subscriber('experimental_setup', ExpSetup, self._callback_exp)
 
         _sub_img = message_filters.Subscriber('/processing_unit/measurer/depth_labeled/image_raw', Image)
         _sub_tns = message_filters.Subscriber('transmittance', Transmittance)
@@ -28,6 +33,14 @@ class TransmittanceMonitor(object):
         
         self._bridge = CvBridge()
 
+        return
+
+    def _callback_exp(self, msg):
+        self._sensor_name = msg.name_sensor
+        self._dist_testpiece = msg.dist_testpiece
+        rospy.loginfo("ExpSetup: %s %.1f", self._sensor_name, self._dist_testpiece)
+        self._sub_exp.unregister()
+        return
 
     def _callback(self, msg_img, msg_tns):
         try:
@@ -45,6 +58,7 @@ class TransmittanceMonitor(object):
         rospy.loginfo("Time: img %.2f, tns %.2f, dif %.2f", itime, ttime, itime-ttime)
         
         if self._prev_stamp < msg_img.header.stamp:
+            # to avoid display problems when looping data
             self.display()
         
         self._prev_stamp = msg_img.header.stamp
@@ -54,6 +68,22 @@ class TransmittanceMonitor(object):
     def display(self):
         rospy.loginfo("Transmittance: %f", self._trans_value)
         
+        _height, _width, _ = self._depth_map.shape
+        _text = "{:.2f}".format(self._trans_value*100.0)
+        _fontface = cv2.FONT_HERSHEY_SIMPLEX
+        _fontscale = 0.6
+        _thickness = 1
+        _margin = 4
+        (_w, _h), _baseline = cv2.getTextSize(_text, _fontface, _fontscale, _thickness)
+
+        cv2.putText(self._depth_map,
+            text=_text,
+            org=(_width-_w-_margin,_h+_margin), 
+            fontFace=_fontface,
+            fontScale=_fontscale,
+            color=(0,255,255),
+            thickness=_thickness,
+            lineType=cv2.LINE_AA)
         cv2.imshow('transmittance_monitor', self._depth_map)
 
         k = cv2.waitKey(50) & 0xFF

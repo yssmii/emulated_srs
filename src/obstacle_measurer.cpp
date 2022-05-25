@@ -37,15 +37,15 @@ int main(int argc, char** argv)
 emulated_srs::ObstacleMeasurer::ObstacleMeasurer(void)
     :
     emulated_srs::ObstacleDetector(),
-    param_dist_testpiece_(1500.0),
+    //param_dist_testpiece_(1500.0),
     param_use_correct_region_p_(0),
     param_fname_correct_region_("Reg.png")
 {
-  node_handle_.getParam("dist_testpiece", param_dist_testpiece_);
+  //node_handle_.getParam("dist_testpiece", param_dist_testpiece_);
   node_handle_.getParam("use_region_p", param_use_correct_region_p_);
   node_handle_.getParam("filename_region", param_fname_correct_region_);
 
-  ROS_INFO("dist_testpiece: %f", param_dist_testpiece_);
+  //ROS_INFO("dist_testpiece: %f", param_dist_testpiece_);
   ROS_INFO("use_region_p: %d", param_use_correct_region_p_);
   ROS_INFO("filename_region: %s", param_fname_correct_region_.c_str());
 }
@@ -76,6 +76,7 @@ void emulated_srs::ObstacleMeasurer::initializeMap(
   return;
 }
 
+/*
 void emulated_srs::ObstacleMeasurer::publishExpSetup(void)
 {
   // publish the experimental setup as a latch topic
@@ -95,7 +96,7 @@ void emulated_srs::ObstacleMeasurer::publishExpSetup(void)
 
   return;
 }
-
+*/
 
 void
 emulated_srs::ObstacleMeasurer::setMeasurableInfo(
@@ -167,8 +168,8 @@ int emulated_srs::ObstacleMeasurer::publishObstaclesMessage(
 
 void emulated_srs::ObstacleMeasurer::setBasenameToSaveImages(void)
 {
-  int tdist = param_dist_testpiece_;
-  basename_to_save_images_ = param_name_sensor_ + "_"
+  int tdist = setup_dist_testpiece_;
+  basename_to_save_images_ = setup_name_sensor_ + "_"
                             + std::to_string(tdist) + "_"
                             + getLocalTimeString(header_pointcloud2_.stamp) + ".png";
   return;

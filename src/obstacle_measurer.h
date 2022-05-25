@@ -39,7 +39,7 @@ private:
   void initializeMap(const int width,
                       const int height,
                       const int point_step);
-  void publishExpSetup(void);
+  //void publishExpSetup(void);
   void displayAll(void);
   void setBasenameToSaveImages(void);
 
@@ -52,7 +52,7 @@ private:
                     std::vector<emulated_srs::Obstacle> &obsmsgary);
 
 private:
-  float param_dist_testpiece_; //!< exp. setup
+  //float param_dist_testpiece_; //!< exp. setup
 
   int param_use_correct_region_p_;
   std::string param_fname_correct_region_;

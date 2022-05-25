@@ -7,7 +7,7 @@
             Astra|Vzense|ZED|ZED2|ZED2i"
        />
 
-  <arg name="exp_distance" default="1000.0" />
+  <arg name="exp_distance" default="-1000.0" />
 
   <arg name="record_p" default="0" />
 
@@ -17,7 +17,13 @@
       <arg name="dirname_data" default="$(env PWD)/Data" />
   -->  
   <arg name="dirname_data" default="/media/ysumi/LaCie/Data" />
-  
+
+  <node name="exp_setup" pkg="emulated_srs" type="experimental_setup_broadcaster.py"
+    output="screen" cwd="node">
+    <param name="sensor_name" value="$(arg sensor_name)" />
+    <param name="dist_testpiece" value="$(arg exp_distance)" />
+  </node>
+
   <group ns="sensing_unit">
     <group if="$(eval sensor_name=='D435' or 
                        sensor_name=='D455' or
@@ -149,6 +155,7 @@
             args="-o $(arg dirname_data)/$(arg sensor_name)
                   --split --size=4000
                   /sensing_unit/camera/depth_registered/points_throttle
+                  /experimental_setup
                   /tf /tf_static">
       </node>
     </group>

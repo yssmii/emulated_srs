@@ -27,6 +27,7 @@
 
 #include <emulated_srs/Obstacle.h>
 #include <emulated_srs/SetMask.h>
+#include <emulated_srs/ExpSetup.h>
 
 #include "intensity_map.h"
 
@@ -83,7 +84,7 @@ protected:
   virtual void displayAll(void);
   virtual void saveAll(void);
 
-  virtual void publishExpSetup(void);
+  //virtual void publishExpSetup(void);
   
   //!障害物検知結果をpublishする
   virtual int publishObstaclesMessage(
@@ -113,6 +114,8 @@ private:
   //!点群データをサブスクライブした際に呼び出されるコールバック関数
   void pc2Callback(
     const sensor_msgs::PointCloud2ConstPtr &pc2);
+  void setupCallback(
+    const emulated_srs::ExpSetup &msg);
 
   //!点群データを2次元のマップデータに変換する
   bool convertPC2ToMapData(
@@ -149,6 +152,7 @@ public:
 protected:
   //! param for the name of topic to subscribe to
   std::string param_name_topic_;
+  std::string param_name_setup_;
   
   //! true, if the subscribed PC2 has RGB information, 
   bool has_rgb_data_;
@@ -185,6 +189,9 @@ protected:
   std::string param_dname_log_;
   //std::string param_fname_region_;
 
+  std::string setup_name_sensor_;
+  float setup_dist_testpiece_;
+
   //! set true after the 1st subscription of PC2
   bool flg_initialized_p_;
 
@@ -197,6 +204,7 @@ protected:
 private:
   //! ROS subscriber
   ros::Subscriber subscriber_;
+  ros::Subscriber subscriber_setup_;
 
   //! ROS service server
   ros::ServiceServer service_set_mask_;
@@ -209,7 +217,7 @@ private:
 
 protected:
   ros::Publisher publisher_obstacle_;
-  ros::Publisher publisher_exp_setup_; // experiment setup
+  //ros::Publisher publisher_exp_setup_; // experiment setup
 
   //! header of subscribed PC2
   std_msgs::Header header_pointcloud2_;
