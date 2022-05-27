@@ -28,6 +28,15 @@
 * _p_: Pauses the masking process at the obstacle detection node
 * _r_: Restarts the masking process at the obstacle detection node
 
+## transmittance_monitor.py
+
+* _transmittance_monitor.py_ is a monitor tool that subscribes the topics,
+    _/transittance_, published from _hoge.py_ and displays their spatial transmittances values
+
+### Usage
+
+    rosrun emulated_srs transmittance_monitor.py
+
 ## makeMask
 
 * _makeMask_ is a command line tool to generate a mask image, like [this

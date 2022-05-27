@@ -18,12 +18,6 @@
 * _intopic_: topic name of PC2 to subscribe to. (default:
     "/sensing_unit/camera/depth_registered/points_throttle")
 
-### For experimental setup
-
-* _sensor_name_: name of the sensor (default: D435)
-* _exp_distance_: distance from the sensor optical window to the test piece
-    (default: 3000.0 [mm])
-
 ### For initiating the _obstacle_measurer_ node
 
 * _zkey_: The limit distance of detection. Pixels that are farther away from
