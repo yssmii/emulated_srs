@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # license removed for brevity
-from cmath import e
-from tkinter import E
+
 import rospy
 from std_msgs.msg import String
 from emulated_srs.msg import ExpSetup

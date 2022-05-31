@@ -14,24 +14,30 @@ from emulated_srs.msg import ExpSetup
 
 class TransmittanceMonitor(object):
     def __init__(self):
-        rospy.init_node('transmittance_monitor', anonymous=True)
+        #rospy.init_node('transmittance_monitor', anonymous=True)
+        rospy.init_node('transmittance_monitor')
 
         #self._sensor_name = ""
         #self._dist_testpiece = 0.0
         #self._sub_exp = rospy.Subscriber('experimental_setup', ExpSetup, self._callback_exp)
 
         _sub_img = message_filters.Subscriber('/processing_unit/measurer/depth_labeled/image_raw', Image)
-        _sub_tns = message_filters.Subscriber('transmittance', Transmittance)
+        _sub_tns = message_filters.Subscriber('/transmittance', Transmittance)
 
         _queue_size = 100
-        _delay = 0.5
+        _delay = 0.1
 
-        self._sync = message_filters.ApproximateTimeSynchronizer([_sub_img, _sub_tns], _queue_size, _delay, reset=True)
+        
+
+        #self._sync = message_filters.ApproximateTimeSynchronizer([_sub_img, _sub_tns], _queue_size, _delay, reset=True)
+        self._sync = message_filters.ApproximateTimeSynchronizer([_sub_img, _sub_tns], _queue_size, _delay)
         self._sync.registerCallback(self._callback)
 
         self._prev_stamp = rospy.Time(0)
         
         self._bridge = CvBridge()
+
+        rospy.loginfo("ExpSetup: init")
 
         return
 
@@ -69,11 +75,11 @@ class TransmittanceMonitor(object):
         rospy.loginfo("Transmittance: %f", self._trans_value)
         
         _height, _width, _ = self._depth_map.shape
-        _text = "{:.2f}".format(self._trans_value*100.0)
+        _text = "{:.3f}".format(self._trans_value)
         _fontface = cv2.FONT_HERSHEY_SIMPLEX
-        _fontscale = 0.6
-        _thickness = 1
-        _margin = 4
+        _fontscale = 3.0
+        _thickness = 3
+        _margin = 16
         (_w, _h), _baseline = cv2.getTextSize(_text, _fontface, _fontscale, _thickness)
 
         cv2.putText(self._depth_map,
