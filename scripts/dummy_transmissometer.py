@@ -16,7 +16,8 @@ class DummyTransmissometer(object):
         self._rate = rospy.Rate(r)
         self._trans = Transmittance()
         self._trans.wavelength = 780.0
-        self._trans.trans = 0.0
+        self._trans.distance = 6000.0
+        self._trans.trans = 0.0001
         self._stamp = rospy.Time.now()
 
     def _callback(self,msg):
@@ -28,7 +29,7 @@ class DummyTransmissometer(object):
     def _publish(self):
         self._trans.trans += 0.1
         if self._trans.trans > 1.0:
-            self._trans.trans = 0.0
+            self._trans.trans = 0.0001
         self._trans.header.stamp = self._stamp
         self._pub.publish(self._trans)
         self._rate.sleep()

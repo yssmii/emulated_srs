@@ -1,6 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+@file mask_maker.py
+@brief
+
+@author Yasushi SUMI <y.sumi@aist.go.jp>
+
+Copyright (C) 2021 AIST
+Released under the MIT license
+https://opensource.org/licenses/mit-license.php
+"""
 import rospy
 
 from sensor_msgs.msg import Image

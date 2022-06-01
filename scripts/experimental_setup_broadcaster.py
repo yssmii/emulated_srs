@@ -1,5 +1,16 @@
 #!/usr/bin/env python
-# license removed for brevity
+# -*- coding: utf-8 -*-
+
+"""
+@file experimental_setup_broadcaster.py
+@brief
+
+@author Yasushi SUMI <y.sumi@aist.go.jp>
+
+Copyright (C) 2021 AIST
+Released under the MIT license
+https://opensource.org/licenses/mit-license.php
+"""
 
 import rospy
 from std_msgs.msg import String
@@ -10,7 +21,7 @@ def broadcaster():
 
     pub = rospy.Publisher('experimental_setup', ExpSetup, queue_size=1, latch=True)
     sname = "UNKNOWN"
-    tdist = -1.0
+    tdist = 3000.0
 
     try:
         #sname = rospy.get_param('/processing_unit/measurer/sensor_name')
@@ -18,7 +29,7 @@ def broadcaster():
         tdist = rospy.get_param('~dist_testpiece')
     except KeyError:
         rospy.logerr("value not set")
-        rospy.signal_shutdown("value not set")
+        #rospy.signal_shutdown("value not set")
     
     if(tdist<0.0):
         rospy.logerr("invalid distance %f" % tdist)
@@ -30,7 +41,7 @@ def broadcaster():
     esetup.dist_testpiece = tdist
 
     esetup.header.stamp = rospy.Time.now()
-   
+
     pub.publish(esetup)
 
     rospy.spin()
