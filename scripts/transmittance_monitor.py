@@ -15,7 +15,7 @@ https://opensource.org/licenses/mit-license.php
 import rospy
 
 from sensor_msgs.msg import Image
-from cv_bridge import CvBridge
+from cv_bridge import CvBridge, CvBridgeError
 import message_filters
 import cv2
 import numpy as np

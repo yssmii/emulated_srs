@@ -7,15 +7,16 @@
             Astra|Vzense|ZED|ZED2|ZED2i"
        />
 
+  <arg name="throttle_p" default="1" />
+  <arg name="throttle_fps" default="4" />
+
+  <!--
   <arg name="exp_distance" default="-1000.0" />
 
   <arg name="record_p" default="0" />
 
-  <arg name="fps" default="4" />
-
-  <!--
-      <arg name="dirname_data" default="$(env PWD)/Data" />
-  -->  
+  <arg name="dirname_data" default="$(env PWD)/Data" />
+  <arg name="record_delay" default="10.0" />
   <arg name="dirname_data" default="/media/ysumi/LaCie/Data" />
 
   <node name="exp_setup" pkg="emulated_srs" type="experimental_setup_broadcaster.py"
@@ -23,6 +24,7 @@
     <param name="sensor_name" value="$(arg sensor_name)" />
     <param name="dist_testpiece" value="$(arg exp_distance)" />
   </node>
+  -->
 
   <group ns="sensing_unit">
     <group if="$(eval sensor_name=='D435' or 
@@ -146,23 +148,26 @@
       </include>
     </group>
 
-    <node name="throttle" pkg="topic_tools" type="throttle"
-          args="messages /sensing_unit/camera/depth_registered/points
-                $(arg fps)" />
+    <group if="$(arg throttle_p)">
+      <node name="throttle" pkg="topic_tools" type="throttle"
+            args="messages /sensing_unit/camera/depth_registered/points
+                  $(arg throttle_fps)" />
+    </group>
 
+<!--
     <group if="$(arg record_p)">
       <node name="record_points" pkg="rosbag" type="record" output="screen"
-            args="-o $(arg dirname_data)/$(arg sensor_name)
-                  --split --size=4000
+            args="-o $(arg dirname_data)/$(arg sensor_name) split size=4000
                   /sensing_unit/camera/depth_registered/points_throttle
                   /experimental_setup
-                  /tf /tf_static">
+                  /tf /tf_static"
+            launch-prefix="bash -c 'sleep $(arg record_delay); $0 $@' ">
       </node>
     </group>
-    
-    
+-->    
+
   </group>
-  
+
 </launch>
 
  
