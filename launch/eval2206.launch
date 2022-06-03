@@ -1,0 +1,41 @@
+<launch>
+  <arg name="zkey" default="3200.0" />
+  <arg name="min_gap_of_occluding_boundary" default="50.0" />
+  <arg name="min_pixels_as_object" default="500" />
+  <arg name="min_overlap_rate" default="0.8" />
+  
+  <arg name="use_mask_p" default="0" />
+
+  <arg name="save_images_p" default="0" />
+  <arg name="dirname_log" default="$(env PWD)/Data/" />
+
+  <arg name="filename_mask" default="MASK.png" />
+  <arg name="intopic" default="/sensing_unit/camera/depth_registered/points_throttle" />
+
+
+  <include file="$(find emulated_srs)/launch/processing_unit.launch">
+    <arg name="zkey" value="$(arg zkey)" />
+    <arg name="min_gap_of_occluding_boundary" value="$(arg min_gap_of_occluding_boundary)" />
+    <arg name="min_pixels_as_object" value="$(arg min_pixels_as_object)" />
+    <arg name="min_overlap_rate" value="$(arg min_overlap_rate)" />
+
+    <arg name="filename_mask" value="$(arg filename_mask)" />
+    <arg name="dirname_log" value="$(arg dirname_log)" />
+    <arg name="display_images_p" value="1" />
+    <arg name="publish_images_p" value="1" />
+    <arg name="publish_markers_p" value="0" />
+    <arg name="save_images_p" value="$(arg save_images_p)" />
+  </include>
+
+<!--
+  <node name="transmittance_publisher" pkg="emulated_srs"
+    type="transmittance.py" />
+-->    
+  <node name="transmittance_monitor" pkg="emulated_srs"
+    type="transmittance_monitor.py" />
+  
+  <node name="mask_maker" pkg="emulated_srs"
+    type="mask_maker.py" />
+</launch>
+
+ 

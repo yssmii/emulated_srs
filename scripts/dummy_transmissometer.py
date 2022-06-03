@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # license removed for brevity
 
 import rospy
@@ -12,6 +13,7 @@ class DummyTransmissometer(object):
     def __init__(self, r):
         rospy.init_node('dummy_transmissometer')
         rospy.Subscriber('/processing_unit/measurer/depth/image_raw',
+        
             Image, self._callback)
         self._pub = rospy.Publisher('transmittance', Transmittance, queue_size=10)
         self._rate = rospy.Rate(r)
@@ -20,6 +22,7 @@ class DummyTransmissometer(object):
         self._trans.distance = 6000.0
         self._trans.trans = 0.0001
         self._stamp = rospy.Time.now()
+        rospy.loginfo("Time: %.2f", self._stamp.to_sec())
 
     def _callback(self,msg):
         self._stamp = msg.header.stamp

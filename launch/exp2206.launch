@@ -15,10 +15,10 @@
 
   <arg name="record_delay" default="10.0" />
   
-  <arg name="dirname_data" default="$(env PWD)/Data" />
   <!--
-  <arg name="dirname_data" default="/media/ysumi/LaCie/Data" />
+    <arg name="dirname_data" default="$(env PWD)/Data" />
   -->
+  <arg name="dirname_data" default="/media/ysumi/LaCie/Data" />
 
   <node name="exp_setup" pkg="emulated_srs" type="experimental_setup_broadcaster.py"
     output="screen" cwd="node">
@@ -28,17 +28,21 @@
 
   <include file="$(find emulated_srs)/launch/sensing_unit.launch">
     <arg name="sensor_name" value="$(arg sensor_name)" />
-    <arg name="throttle_p" default="1" />
-    <arg name="throttle_fps" default="$(arg fps)" />
+    <arg name="throttle_p" value="1" />
+    <arg name="throttle_fps" value="$(arg fps)" />
   </include>
 
   <include file="$(find emulated_srs)/launch/processing_unit.launch">
     <!-- for display -->
-    <arg name="zkey" default="$(eval 200. + arg('exp_distance'))" />
+    <arg name="zkey" value="$(eval 200. + arg('exp_distance'))" />
   </include>
 
+<!--
   <node name="transmittance_publisher" pkg="emulated_srs"
     type="transmittance.py" />
+-->    
+  <node name="transmittance_publisher" pkg="emulated_srs"
+    type="dummy_transmissometer.py" />
 
   <group if="$(arg record_p)">
     <node name="record_points" pkg="rosbag" type="record" output="screen"

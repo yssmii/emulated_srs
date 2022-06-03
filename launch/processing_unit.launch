@@ -17,7 +17,7 @@
   <arg name="publish_markers_p" default="0" />
 
   <arg name="save_images_p" default="0" />
-  <arg name="dirname_log" default="Data/" />
+  <arg name="dirname_log" default="$(env PWD)/Data/" />
 
   <arg name="filename_mask" default="MASK.png" />
   <!-- <arg name="filename_region" default="Reg.png" /> -->
