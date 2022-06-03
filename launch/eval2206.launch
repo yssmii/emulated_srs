@@ -12,6 +12,7 @@
   <arg name="filename_mask" default="MASK.png" />
   <arg name="intopic" default="/sensing_unit/camera/depth_registered/points_throttle" />
 
+  <arg name="sync_delay" default="0.5" />
 
   <include file="$(find emulated_srs)/launch/processing_unit.launch">
     <arg name="zkey" value="$(arg zkey)" />
@@ -32,7 +33,9 @@
     type="transmittance.py" />
 -->    
   <node name="transmittance_monitor" pkg="emulated_srs"
-    type="transmittance_monitor.py" />
+        type="transmittance_monitor.py">
+    <param name="sync_delay" value="$(arg sync_delay)" />
+  </node>
   
   <node name="mask_maker" pkg="emulated_srs"
     type="mask_maker.py" />

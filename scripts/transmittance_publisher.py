@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-@file transmissometer.py
+@file transmittance_publisher.py
 @brief
 
 @author Masato Kodama <kodama.masato@aist.go.jp>
@@ -18,11 +18,11 @@ from emulated_srs.msg import Transmittance
 from datetime import datetime
 from socket import socket, AF_INET, SOCK_DGRAM
 
-def publishTransmittance():
+def publish_transmittance():
     # for ros
     transmsg = Transmittance()
     pub = rospy.Publisher('transmittance', Transmittance, queue_size=10)
-    rospy.init_node('Transmittance', anonymous=True)
+    rospy.init_node('transmittance_publisher', anonymous=True)
     rate = rospy.Rate(10) # 10hz
     
     
@@ -60,6 +60,6 @@ def publishTransmittance():
     
 if __name__ == '__main__':
     try:
-        publishTransmittance()
+        publish_transmittance()
     except rospy.ROSInterruptException:
         pass

@@ -41,6 +41,13 @@ class TransmittanceMonitor(object):
         _queue_size = 100
         _delay = 0.1
 
+        try:
+            _delay = rospy.get_param('~sync_delay')
+        except KeyError:
+            rospy.logerr("sync_delay not set")
+        else:
+            rospy.loginfo("sync_delay: %.2f", _delay)
+        
         #self._sync = message_filters.ApproximateTimeSynchronizer([_sub_img, _sub_tns], _queue_size, _delay, reset=True)
         self._sync = message_filters.ApproximateTimeSynchronizer([_sub_img, _sub_tns], _queue_size, _delay)
         self._sync.registerCallback(self._callback)

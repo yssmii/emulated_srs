@@ -13,7 +13,6 @@ class DummyTransmissometer(object):
     def __init__(self, r):
         rospy.init_node('dummy_transmissometer')
         rospy.Subscriber('/processing_unit/measurer/depth/image_raw',
-        
             Image, self._callback)
         self._pub = rospy.Publisher('transmittance', Transmittance, queue_size=10)
         self._rate = rospy.Rate(r)

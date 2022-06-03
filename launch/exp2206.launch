@@ -39,7 +39,7 @@
 
 <!--
   <node name="transmittance_publisher" pkg="emulated_srs"
-    type="transmittance.py" />
+    type="transmittance_publisher.py" />
 -->    
   <node name="transmittance_publisher" pkg="emulated_srs"
     type="dummy_transmissometer.py" />
