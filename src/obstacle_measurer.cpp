@@ -16,6 +16,7 @@
 #include <ros/ros.h>
 
 #include <emulated_srs/Obstacle.h>
+#include <emulated_srs/ObstacleGroup.h>
 #include <emulated_srs/ExpSetup.h>
 
 #include "obstacle_measurer.h"
@@ -147,22 +148,34 @@ int emulated_srs::ObstacleMeasurer::publishObstaclesMessage(
   const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
   const int object_count)
 {
-  std::vector<emulated_srs::Obstacle> obsmsgary;
+ // std::vector<emulated_srs::Obstacle> obsmsgary;
+  emulated_srs::ObstacleGroup og;
 
-  this->emulated_srs::ObstacleDetector::setObstaclesMessage(obstacle_classified, object_count, obsmsgary);
+  //this->emulated_srs::ObstacleDetector::setObstaclesMessage(obstacle_classified, object_count, obsmsgary);
+  this->emulated_srs::ObstacleDetector::setObstaclesMessage(obstacle_classified, object_count, og.data);
 
   if(param_use_correct_region_p_ && (object_count > 0))
   {
-    setMeasurableInfo(object_count, obsmsgary);
+    //setMeasurableInfo(object_count, obsmsgary);
+    setMeasurableInfo(object_count, og.data);
   }
 
+  og.header = header_pointcloud2_;
+  og.header.seq = 0;
+  og.n_obstacles = object_count;
+
+  publisher_obstacle_.publish(og);
+
+  /*
   //! if object_count==0, publish an  empty obstacle
   publisher_obstacle_.publish(obsmsgary[0]);
   for(int i = 1; i < object_count; i++)
   {
     publisher_obstacle_.publish(obsmsgary[i]);
   }
+  */
 
+  
   return UFV::OK;
 }
 

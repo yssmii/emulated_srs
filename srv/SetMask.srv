@@ -1,4 +1,4 @@
-string cmd
-sensor_msgs/Image mask
+string cmd              # command string: "start", "pause", or "restart"
+sensor_msgs/Image mask  # mask image, ignored on "pause" or "restart"
 ---
-string res
+string res              # response string from obstacle detector nodes

@@ -12,7 +12,7 @@
 * For more details on the object detection algorithm, please see the appendix
   of [the journal article][6].
 
-|![example of object detection results](/doc/IEEESensors2021Fig10.png)|
+|![example of object detection results](doc/IEEESensors2021Fig10.png)|
 |:--:|
 | [Example of detection results][6] |
 
@@ -47,7 +47,7 @@
 ### obstacle_classifier
 
 * A ROS node that performs object detection and classification.
-* It subscribes to organized (image-like) PC2 topics and executes obstacle 
+* It subscribes to organized (image-like) PC2 topics and executes obstacle
   detection and classification, and publishes custom topics containing a list of
   detected and classified obstacles.
 * The detected obstacles are labeled according to recognition results by
@@ -134,99 +134,57 @@
 
 ## Subscribed ROS topics
 
-### /camera/depth_registered/points ([sensor_msgs/PointCloud2.msg])
+### /camera/depth_registered/points ([sensor_msgs/PointCloud2][2])
 
 * Organized (image-like) point cloud
 
+### /experimental_setup ([emulated_srs/ExpSetup](msg/ExpSetup.msg))
+
+* Experimental setup broadcasted as a latched topic
+
 ## Published ROS topics
 
-### obstacle ([emulated_srs/Obstacle.msg])
+### obstacle_group ([emulated_srs/ObstacleGroup](msg/ObstacleGroup.msg))
 
-* Information of the detected obstacle
-* Example:
+* Information of the detected obstacles
 
-        $ rostopic echo -n 1 /emulated_srs/obstacle
-        header:                      # stamp and frame_id copied from the PC2
-          seq: 0
-          stamp:
-            secs: 1626834032
-            nsecs:  49269199
-          frame_id: "camera_color_optical_frame"
-        n: 0                         # seq num of the obstacle in the frame
-        position_3D:                 # at front, upper, left of the 3D bounding box
-          x: -0.060076452791690826
-          y: -0.02606579288840294
-          z: 1.2140001058578491
-        dimensions_3D:               # of the 3D bounding box
-          x: 0.23947076499462128
-          y: 0.6017187237739563
-          z: 0.28299999237060547
-        centroid_3D:                 # of the point cloud, NOT of the bounding box
-          x: 0.060652490705251694
-          y: 0.197583869099617
-          z: 1.2704710960388184
-        position_2D:                 # of the 2D bounding box
-          x: 301.0
-          y: 228.0
-        dimensions_2D:               # of the 2D bounding box
-          x: 115.0
-          y: 251.0
-        centroid_2D:                 # of the 2D obstacle region
-          x: 60.65249252319336
-          y: 197.5838623046875
-        n_points: 19902              # num of the points
-        n_points_within: 0           # num of them within the correct region
-        filename_saved: "20210721_112032_49269199.png"
-        type_class: "unknown"
-        confidence_class: 0.0
-        ---
-
-### depth/image_raw ([sensor_msgs/Image])
+### depth/image_raw ([sensor_msgs/Image][8])
 
 * Depth images converted from PointCloud2, where colored obstacle regions are
   overwritten according to the results of obstacle detection and optional
   classification by YOLO
 
-### depth_labeled/image_raw ([sensor_msgs/Image])
+[8]: http://docs.ros.org/en/noetic/api/sensor_msgs/html/msg/Image.html
+
+### depth_labeled/image_raw ([sensor_msgs/Image][8])
 
 * Depth images converted from PointCloud2, where colored obstacle regions and
   text labels are overwritten according to the results of the obstacle
-  detection and 
-  optional classification by YOLO
+  detection and optional classification by YOLO
 
-### color/image_raw ([sensor_msgs/Image])
+### color/image_raw ([sensor_msgs/Image][8])
 
 * RGB images converted from PointCloud2
 
-### visualization_marker ([visualization_msgs/Maker])
+### visualization_marker ([visualization_msgs/Maker][9])
 
-* [Marker](http://wiki.ros.org/rviz/DisplayTypes/Marker) for rviz
+* Rviz markers represenging the 3D bounding boxes of the detected obstacles
 
-### setup_experiment ([emulated_srs/ExpSetup])
-
-* Latched topic for broadcasting the experimental setup
+[9]: http://wiki.ros.org/rviz/DisplayTypes/Marker
 
 ## ROS Services
 
-### set_mask ([emulated_srs/SetMask])
+### set_mask ([emulated_srs/SetMask](srv/SetMask.srv))
 
 * Set the mask image to specify the detection zone for obstacle detection. See
-  [the geometry of _emulated_srs_](/doc/IEEESensors2021Fig12.png).
-
-* emulated_srs/SetMask.srv
-
-      string cmd               # command string: "start", "pause", or "restart"
-      sensor_msgs/Image mask   # mask image, ignored on "pause" or "restart"
-      ---
-      string res               # response string from obstacle detector nodes
+  [the geometry of _emulated_srs_](doc/IEEESensors2021Fig12.png).
 
 ## ROS launches
 
-* [obstacle_classifier.launch](/doc/obstacle_classifier_launch.md)
-* [sensing_unit.launch](/doc/sensing_unit_launch.md)
-* [processing_unit.launch](/doc/processing_unit_launch.md)
+* [obstacle_classifier.launch](doc/obstacle_classifier_launch.md)
+* [sensing_unit.launch](doc/sensing_unit_launch.md)
+* [processing_unit.launch](doc/processing_unit_launch.md)
 
 ## License
 
 * [MIT](https://opensource.org/licenses/mit-license.php)
-

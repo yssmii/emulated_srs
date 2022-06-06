@@ -106,6 +106,7 @@ add_message_files(
   #ClassifiedObstacle.msg
   #ClassifiedObstacleArray.msg
   Obstacle.msg
+  ObstacleGroup.msg
   ExpSetup.msg
   Transmittance.msg
   )

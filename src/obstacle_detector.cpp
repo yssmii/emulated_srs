@@ -29,6 +29,7 @@
 #include <opencv2/core.hpp>
 
 #include <emulated_srs/Obstacle.h>
+#include <emulated_srs/ObstacleGroup.h>
 #include <emulated_srs/ExpSetup.h>
 #include <emulated_srs/SetMask.h>
 
@@ -125,8 +126,11 @@ emulated_srs::ObstacleDetector::ObstacleDetector(void)
   publisher_marker_ = node_handle_.advertise<visualization_msgs::Marker>(
       "visualization_marker", 1000);
 
-  publisher_obstacle_ = node_handle_.advertise<emulated_srs::Obstacle>(
-      "obstacle", 1000);
+  //publisher_obstacle_ = node_handle_.advertise<emulated_srs::Obstacle>(
+  //    "obstacle", 1000);
+
+  publisher_obstacle_ = node_handle_.advertise<emulated_srs::ObstacleGroup>(
+      "obstacle_group", 1000);
 
   publisher_image_depth_ = image_transport_.advertise(
       "depth/image_raw", 10);
@@ -942,7 +946,7 @@ int emulated_srs::ObstacleDetector::publishImagesMessage(void)
  * ---
  * </PRE>
  */
-
+/*
 void emulated_srs::ObstacleDetector::setObstaclesMessage(
   const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
   const int object_count,
@@ -1037,22 +1041,78 @@ void emulated_srs::ObstacleDetector::setObstaclesMessage(
 
   return;
 }
+*/
+
+void emulated_srs::ObstacleDetector::setObstaclesMessage(
+  const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
+  const int object_count,
+  std::vector<emulated_srs::Obstacle> &obsmsgary)
+{
+  for (int i = 0; i < object_count; i++)
+  {
+    emulated_srs::Obstacle obsmsg;
+
+    obsmsg.header = header_pointcloud2_;
+    obsmsg.header.seq = i;
+
+    obsmsg.filename_saved = basename_to_save_images_;
+
+    obsmsg.n = obstacle_classified[i].n;
+    obsmsg.type_class = obstacle_classified[i].classstr;
+    obsmsg.confidence_class = obstacle_classified[i].conf;
+
+    obsmsg.position_3D.x = obstacle_classified[i].bvol.x / 1000.0;
+    obsmsg.position_3D.y = obstacle_classified[i].bvol.y / 1000.0;
+    obsmsg.position_3D.z = obstacle_classified[i].bvol.z / 1000.0;
+
+    obsmsg.dimensions_3D.x = obstacle_classified[i].bvol.width / 1000.0;
+    obsmsg.dimensions_3D.y = obstacle_classified[i].bvol.height / 1000.0;
+    obsmsg.dimensions_3D.z = obstacle_classified[i].bvol.depth / 1000.0;
+
+    obsmsg.centroid_3D.x = obstacle_classified[i].grv.x / 1000.0;
+    obsmsg.centroid_3D.y = obstacle_classified[i].grv.y / 1000.0;
+    obsmsg.centroid_3D.z = obstacle_classified[i].grv.z / 1000.0;
+
+    obsmsg.position_2D.x = obstacle_classified[i].bbox.x;
+    obsmsg.position_2D.y = obstacle_classified[i].bbox.y;
+
+    obsmsg.dimensions_2D.x = obstacle_classified[i].bbox.width;
+    obsmsg.dimensions_2D.y = obstacle_classified[i].bbox.height;
+
+    obsmsg.centroid_2D.x = obstacle_classified[i].grv.x;
+    obsmsg.centroid_2D.y = obstacle_classified[i].grv.y;
+
+    obsmsg.n_points = obstacle_classified[i].size;
+    obsmsg.n_points_within = 0;
+
+    obsmsgary.push_back(obsmsg);
+  }
+
+  return;
+}
 
 int emulated_srs::ObstacleDetector::publishObstaclesMessage(
   const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
   const int object_count)
 {
-  std::vector<emulated_srs::Obstacle> obsmsgary;
+  //std::vector<emulated_srs::Obstacle> obsmsgary;
+  emulated_srs::ObstacleGroup og;
 
-  setObstaclesMessage(obstacle_classified, object_count, obsmsgary);
-  
-  //! if object_count==0, publish an  empty obstacle
-  publisher_obstacle_.publish(obsmsgary[0]);
-  for(int i=1; i < object_count; i++)
-  {
-    publisher_obstacle_.publish(obsmsgary[i]);
-  }
-  //publisher_obstacle_.publish(obsmsgary);
+  //setObstaclesMessage(obstacle_classified, object_count, obsmsgary);
+  setObstaclesMessage(obstacle_classified, object_count, og.data);
+  //setObstaclesMessage(obstacle_classified, 1,  og.data);
+  og.header = header_pointcloud2_;
+  og.header.seq = 0;
+  og.n_obstacles = object_count;
+  //og.data.resize(1);
+  publisher_obstacle_.publish(og);
+
+  //publisher_obstacle_.publish(obsmsgary[0]);
+  //for(int i=1; i < object_count; i++)
+  //{
+  //    publisher_obstacle_.publish(obsmsgary[i]);
+  //}
+  //publisher_obstacle_.publish(obsgrp);
 
   return UFV::OK;
 }
