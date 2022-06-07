@@ -109,6 +109,7 @@ add_message_files(
   ObstacleGroup.msg
   ExpSetup.msg
   Transmittance.msg
+  SpectralTransmittance.msg
   )
 
 #generate_messages(DEPENDENCIES std_msgs actionlib_msgs)

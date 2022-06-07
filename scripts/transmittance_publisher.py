@@ -48,8 +48,9 @@ def publish_transmittance():
         transmsg.header.stamp.secs = int(arstr[0]) // 1000
         transmsg.header.stamp.nsecs = (int(arstr[0]) % 1000) * (10 ** 6) # nsec単位でデータを入れるため msを10の6乗倍
         transmsg.wavelength = float(arstr[1])
-        transmsg.trans = float(arstr[2]) * 0.01
-        transmsg.distance = float(arstr[3])
+        transmsg.transmittance = float(arstr[2]) * 0.01
+        transmsg.measurement_distance = float(arstr[3])
+        transmsg.variance = 0.0
 
         pub.publish(transmsg)
 #        rospy.loginfo(data)

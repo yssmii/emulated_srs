@@ -168,7 +168,7 @@
 
 ### visualization_marker ([visualization_msgs/Maker][9])
 
-* Rviz markers represenging the 3D bounding boxes of the detected obstacles
+* Rviz markers representing the 3D bounding boxes of the detected obstacles
 
 [9]: http://wiki.ros.org/rviz/DisplayTypes/Marker
 

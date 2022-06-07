@@ -18,8 +18,9 @@ class DummyTransmissometer(object):
         self._rate = rospy.Rate(r)
         self._trans = Transmittance()
         self._trans.wavelength = 780.0
-        self._trans.distance = 6000.0
-        self._trans.trans = 0.0001
+        self._trans.measurement_distance = 6000.0
+        self._trans.transmittance = 0.0001
+        self._trans.variance = 0.0
         self._stamp = rospy.Time.now()
         rospy.loginfo("Time: %.2f", self._stamp.to_sec())
 

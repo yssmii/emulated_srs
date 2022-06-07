@@ -73,8 +73,8 @@ class TransmittanceMonitor(object):
         except CvBridgeError as e:
             print(e)
         
-        self._trans_value = msg_tns.trans
-        self._trans_distance = msg_tns.distance
+        self._trans_value = msg_tns.transmittance
+        self._trans_distance = msg_tns.measurement_distance
         self._trans_wavelength = msg_tns.wavelength
 
         rospy.logwarn_once("An image has been subscribed: %d x %d x %d" % \
