@@ -13,16 +13,30 @@
 
 ## ROS args
 
-* _sensor_name_: LABEL corresponding to the sensor to be initiated, one
-    of the following:
+### _sensor_name_
+
+* LABEL corresponding to the sensor to be initiated, one of the following:
     D435|D455|L515|LIPSDL|Xtion2|Structure|Kinect|Kinect2|Azure|Astra|Vzense|ZED|ZED2|ZED2i
-* _exp_distance_: distance from the sensor optical window to the test piece,
-    If a negative value, an error message is printed for attention
-    (default: -1000.0 [mm],)
-* _record_p_: If non-zero, the following topcs are saved into ROSBAG files,
-    prefixed with "<dirname_data>/<sensor_name>" (default: 0)
-* _dirname_data_: name of the directory where the ROSBAG files will be saved
-* _fps_: FPS for publishing PointCloud2 topics (default: 4)
+
+### _exp_distance_
+
+* Distance from the sensor optical window to the test piece.
+* If a negative value, an error message is printed for attention
+* default: -1000.0 [mm]
+
+### _record_p_
+
+* If non-zero, the following topcs are saved into ROSBAG files, prefixed with 
+  "<dirname_data>/<sensor_name>" (default: 0)
+
+### _dirname_data_
+
+* Name of the directory where the ROSBAG files will be saved
+
+### _fps_
+
+* FPS for publishing PointCloud2 topics
+* default: 4
 
 ## Supported sensor nodes
 

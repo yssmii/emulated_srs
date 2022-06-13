@@ -16,7 +16,7 @@ import rospy
 
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
-import message_filters
+#import message_filters
 import cv2
 import numpy as np
 import math
@@ -35,25 +35,30 @@ class TransmittanceMonitor(object):
         self._dist_testpiece = 1000.0
         self._sub_exp = rospy.Subscriber('experimental_setup', ExpSetup, self._callback_exp)
 
-        _sub_img = message_filters.Subscriber('/processing_unit/measurer/depth_labeled/image_raw', Image)
-        _sub_tns = message_filters.Subscriber('/transmittance', Transmittance)
+        # 同期は不要
+        #_sub_img = message_filters.Subscriber('/processing_unit/measurer/depth_labeled/image_raw', Image)
+        _sub_img = rospy.Subscriber('/processing_unit/measurer/depth_labeled/image_raw', Image, self._callback_img)
+        #_sub_tns = message_filters.Subscriber('/transmittance', Transmittance)
+        _sub_tns = rospy.Subscriber('/transmittance', Transmittance, self._callback_tns)
 
-        _queue_size = 100
-        _delay = 0.1
+        #_queue_size = 100
+        #_delay = 0.1
 
-        try:
-            _delay = rospy.get_param('~sync_delay')
-        except KeyError:
-            rospy.logerr("sync_delay not set")
-        else:
-            rospy.loginfo("sync_delay: %.2f", _delay)
+        #try:
+        #    _delay = rospy.get_param('~sync_delay')
+        #except KeyError:
+        #    rospy.logerr("sync_delay not set")
+        #else:
+        #    rospy.loginfo("sync_delay: %.2f", _delay)
         
         #self._sync = message_filters.ApproximateTimeSynchronizer([_sub_img, _sub_tns], _queue_size, _delay, reset=True)
-        self._sync = message_filters.ApproximateTimeSynchronizer([_sub_img, _sub_tns], _queue_size, _delay)
-        self._sync.registerCallback(self._callback)
+        #self._sync = message_filters.ApproximateTimeSynchronizer([_sub_img, _sub_tns], _queue_size, _delay)
+        #self._sync.registerCallback(self._callback)
 
-        self._prev_stamp = rospy.Time(0)
-        
+        #self._prev_stamp = rospy.Time(0)
+        self._has_image = False
+        self._has_trans = False
+
         self._bridge = CvBridge()
 
         rospy.loginfo("Initialization: OK")
@@ -66,7 +71,35 @@ class TransmittanceMonitor(object):
         rospy.loginfo("ExpSetup: %s %.1f", self._sensor_name, self._dist_testpiece)
         self._sub_exp.unregister()
         return
+    
+    def _callback_img(self, msg_img):
+        try:
+            self._depth_map = self._bridge.imgmsg_to_cv2(msg_img, "bgr8")
+        except CvBridgeError as e:
+            print(e)
+        rospy.logwarn_once("An image has been subscribed: %d x %d x %d" % \
+                self._depth_map.shape)
+        self._has_image = True
+        
+        #if self._prev_stamp < msg_img.header.stamp:
+            # to avoid display problems when looping data
+        self.display()
+        
+        #self._prev_stamp = msg_img.header.stamp
+        
+        return
 
+    def _callback_tns(self, msg_tns):
+
+        self._trans_value = msg_tns.transmittance
+        self._trans_distance = msg_tns.measurement_distance
+        self._trans_wavelength = msg_tns.wavelength
+
+        self._has_trans = True
+
+        return
+
+    """
     def _callback(self, msg_img, msg_tns):
         try:
             self._depth_map = self._bridge.imgmsg_to_cv2(msg_img, "bgr8")
@@ -91,6 +124,7 @@ class TransmittanceMonitor(object):
         self._prev_stamp = msg_img.header.stamp
         
         return
+    """
 
     def calc_MOR(self, x, t):
         mor = -1.0
@@ -115,54 +149,62 @@ class TransmittanceMonitor(object):
         return t_at
 
     def display(self):
-        rospy.loginfo("Transmittance: %f", self._trans_value)
+        #rospy.loginfo("Transmittance: %f", self._trans_value)
         
-        _height, _width, _ = self._depth_map.shape
-        _trans_at = self.calc_transmittance_at(self._trans_distance, 
-                                                self._trans_value,
-                                                self._dist_testpiece)
-        _mor = self.calc_MOR(self._trans_distance, self._trans_value)
-        _text_trans_org = "T_{:.0f}: {:.3f}".format(self._trans_distance, self._trans_value)
-        _text_trans_at = "T_{:.0f}: {:.3f}".format(self._dist_testpiece, _trans_at)
-        _text_MOR = "MOR: {:.1f}".format(_mor)
-        _fontface = cv2.FONT_HERSHEY_SIMPLEX
-        _fontscale = 1.0
-        _thickness = 2
-        _margin = 16
-        (_, _h), _ = cv2.getTextSize(_text_trans_org, _fontface, _fontscale, _thickness)
+        if self._has_image:
+            _height, _width, _ = self._depth_map.shape
 
-        cv2.putText(self._depth_map,
-            text=_text_trans_org,
-            org=(_margin,_h+_margin), 
-            fontFace=_fontface,
-            fontScale=_fontscale,
-            color=(0,255,255),
-            thickness=_thickness,
-            lineType=cv2.LINE_AA)
-        cv2.putText(self._depth_map,
-            text=_text_trans_at,
-            org=(_margin,_h*2+_margin*2), 
-            fontFace=_fontface,
-            fontScale=_fontscale,
-            color=(0,255,255),
-            thickness=_thickness,
-            lineType=cv2.LINE_AA)
-        cv2.putText(self._depth_map,
-            text=_text_MOR,
-            org=(_margin,_h*3+_margin*3), 
-            fontFace=_fontface,
-            fontScale=_fontscale,
-            color=(0,255,255),
-            thickness=_thickness,
-            lineType=cv2.LINE_AA)    
-        cv2.imshow('transmittance_monitor', self._depth_map)
+            if self._has_trans:
+                _trans_at = self.calc_transmittance_at(self._trans_distance, 
+                                                        self._trans_value,
+                                                        self._dist_testpiece)
+                _mor = self.calc_MOR(self._trans_distance, self._trans_value)
+                _text_trans_org = "T_{:.0f}: {:.3f}".format(self._trans_distance, self._trans_value)
+                _text_trans_at = "T_{:.0f}: {:.3f}".format(self._dist_testpiece, _trans_at)
+                _text_MOR = "MOR: {:.1f}".format(_mor)
+            else:
+                _text_trans_org = "T_??: ???"
+                _text_trans_at = "T_??: ???"
+                _text_MOR = "MOR: ???"
 
-        k = cv2.waitKey(50) & 0xFF
-        if k == 27:
-            rospy.logwarn("Escaped")
+            _fontface = cv2.FONT_HERSHEY_SIMPLEX
+            _fontscale = 1.0
+            _thickness = 2
+            _margin = 16
+            (_, _h), _ = cv2.getTextSize(_text_trans_org, _fontface, _fontscale, _thickness)
 
-        elif k == ord('c'):
-            rospy.logwarn("Canceled")
+            cv2.putText(self._depth_map,
+                text=_text_trans_org,
+                org=(_margin,_h+_margin), 
+                fontFace=_fontface,
+                fontScale=_fontscale,
+                color=(0,255,255),
+                thickness=_thickness,
+                lineType=cv2.LINE_AA)
+            cv2.putText(self._depth_map,
+                text=_text_trans_at,
+                org=(_margin,_h*2+_margin*2), 
+                fontFace=_fontface,
+                fontScale=_fontscale,
+                color=(0,255,255),
+                thickness=_thickness,
+                lineType=cv2.LINE_AA)
+            cv2.putText(self._depth_map,
+                text=_text_MOR,
+                org=(_margin,_h*3+_margin*3), 
+                fontFace=_fontface,
+                fontScale=_fontscale,
+                color=(0,255,255),
+                thickness=_thickness,
+                lineType=cv2.LINE_AA)    
+            cv2.imshow('transmittance_monitor', self._depth_map)
+
+            k = cv2.waitKey(50) & 0xFF
+            if k == 27:
+                rospy.logwarn("Escaped")
+
+            elif k == ord('c'):
+                rospy.logwarn("Canceled")
 
 if __name__ == '__main__':
     try:
