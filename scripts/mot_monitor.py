@@ -62,25 +62,36 @@ class MOTGraph():
         #self.x_vec = np.arange(0, self.length) * self.x_tick \
         #             - self.length * self.x_tick
         self.x_vec = np.zeros(self.length)
-        self.y_vec = np.zeros(self.length)
-        
+        self.y_vec_t = np.zeros(self.length)
+        self.y_vec_d = np.full(self.length, -1.0)
+
         plt.ion()
 
         fig = plt.figure(figsize=(20,10))
-        ax = fig.add_subplot(111)
-        
-        self.line = ax.plot(self.x_vec, self.y_vec, 
+        self.ax_t = fig.add_subplot(111)
+        self.ax_d = self.ax_t.twinx()
+        self.ax_t.grid(True)
+        self.ax_d.grid(False)
+
+        self.line_t = self.ax_t.plot(self.x_vec, self.y_vec_t, 
                             self.marker, color=self.color, 
                             ls="-",
                             linewidth=self.linewidth,
                             alpha=self.alpha)        
+        self.line_d = self.ax_d.plot(self.x_vec, self.y_vec_d, 
+                            self.marker, color="m", 
+                            ls="-",
+                            linewidth=self.linewidth,
+                            alpha=self.alpha)      
 
         if self.ylim is not None:
-            plt.ylim(self.ylim[0], self.ylim[1])
-
-        plt.xlabel(self.xlabel)
+            self.ax_t.set_ylim([self.ylim[0], self.ylim[1]])
+        self.ax_d.set_ylim([-300.0, 6300.0])
+        self.ax_t.set_xlabel("Time [sec]")
+        self.ax_t.set_ylabel("Transmittance")
+        self.ax_d.set_ylabel("Obstacle distance [mm]")
         plt.title(self.title)
-        plt.grid()
+        #plt.grid()
         plt.show()
         
         self.index = 0
@@ -89,20 +100,21 @@ class MOTGraph():
         self.fps = 0.0
         self._x_min = 0.0
 
-    def reset_data(self, xval=0.0, yval=0.0):
+    def reset_data(self, xval, yval_t, yval_d):
         self.x_vec[:] = xval
-        self.y_vec[:] = yval
+        self.y_vec_t[:] = yval_t
+        self.y_vec_d[:] = yval_d
         self._x_min = min(0, xval)
     
     def update_index(self):
         self.index = self.index + 1 if self.index < self.length-1 else 0
         
     def update_ylim(self, y_data):
-        ylim = self.line[0].axes.get_ylim()
+        ylim = self.line_t[0].axes.get_ylim()
         if   y_data < ylim[0]:
-            plt.ylim(y_data*1.1, ylim[1])
+            self.ax_t.set_ylim([y_data*1.1, ylim[1]])
         elif y_data > ylim[1]:
-            plt.ylim(ylim[0], y_data*1.1)
+            self.ax_t.set_ylim([ylim[0], y_data*1.1])
             
     def compute_fps(self):
         curtime = time.time()
@@ -110,26 +122,33 @@ class MOTGraph():
         self.fps = 1.0 / (time_diff + 1e-16)
         self.pretime = curtime 
         
-    def update(self, x_data, y_data):
+    def update(self, x_data, y_data_t, y_data_d):
         # プロットする配列の更新
         #self.x_data += self.x_tick
-        self.y_vec[self.index] = y_data
+        self.y_vec_t[self.index] = y_data_t
+        self.y_vec_d[self.index] = y_data_d
         
         y_pos = self.index + 1 if self.index < self.length else 0
-        tmp_y_vec = np.r_[self.y_vec[y_pos:self.length], self.y_vec[0:y_pos]]
-        self.line[0].set_ydata(tmp_y_vec)
+
+        tmp_y_vec_t = np.r_[self.y_vec_t[y_pos:self.length], self.y_vec_t[0:y_pos]]
+        self.line_t[0].set_ydata(tmp_y_vec_t)
+
+        tmp_y_vec_d = np.r_[self.y_vec_d[y_pos:self.length], self.y_vec_d[0:y_pos]]
+        self.line_d[0].set_ydata(tmp_y_vec_d)
+
         if self.ylim is None:
-            self.update_ylim(y_data)
+            self.update_ylim(y_data_t)
 
         tmp_x_vec = np.roll(self.x_vec, -1)
         tmp_x_vec[self.length - 1] = x_data
 
         self.x_vec = tmp_x_vec - x_data
-        self.line[0].set_xdata(self.x_vec)
+        self.line_t[0].set_xdata(self.x_vec)
+        self.line_d[0].set_xdata(self.x_vec)
         self._x_min -= x_data
 
         plt.xlim(self._x_min - self.x_tick, 0)
-        
+
         plt.title(f"fps: {self.fps:0.1f} Hz")
         #plt.pause(0.01)
         
@@ -158,7 +177,7 @@ class MOTMonitor(object):
 
         self._title = "MOT"
         #self._graph = MOTGraph(1.0/fps, 300*fps)
-        self._graph = MOTGraph(1.0/fps, 30*fps, linewidth=0.5)
+        self._graph = MOTGraph(1.0/fps, 30*fps, ylim=[-0.05, 1.05])
 
         self._prev_stamp_trans = rospy.Time(0)
         self._curr_stamp_trans = rospy.Time(0)
@@ -171,6 +190,7 @@ class MOTMonitor(object):
         self._n_obstacles = 0
         self._obstacle_time = 0
 
+        self._curr_obs_dist = -1.0
 
         rospy.loginfo("Initialization: OK")
 
@@ -195,13 +215,27 @@ class MOTMonitor(object):
     def _callback_obs(self, msg_obs):
         self._n_obstacles = msg_obs.n_obstacles
         self._curr_stamp_obs = msg_obs.header.stamp
-        
+
+        if self._n_obstacles > 0:
+            self._curr_obs_dist = self.calc_min_obstacle_distance(msg_obs)
+            rospy.loginfo("Z: %.2f", self._curr_obs_dist)
         rospy.loginfo("Obstacles: %d at %.2f",
                         self._n_obstacles, self._curr_stamp_obs.to_time())
 
         #self.display()
 
         return
+
+    def calc_min_obstacle_distance(self, msg_obs):
+        if msg_obs.n_obstacles <= 0:
+            return 0.0
+        
+        dist = 100000.0
+        for obs in msg_obs.data:
+            if obs.position_3D.z < dist:
+                dist = obs.position_3D.z
+        
+        return dist * 1000.0
 
     def calc_MOR(self, x, t):
         mor = -1.0
@@ -227,6 +261,9 @@ class MOTMonitor(object):
 
     def display(self):
         while not rospy.is_shutdown():
+            if self._prev_stamp_trans != self._curr_stamp_trans:
+                self._prev_stamp_trans = self._curr_stamp_trans
+
             if self._prev_stamp_obs != self._curr_stamp_obs:
                 duration_obs = (self._curr_stamp_obs - self._prev_stamp_obs).to_sec()
                 _trans_at = self.calc_transmittance_at(self._trans_distance, 
@@ -236,22 +273,20 @@ class MOTMonitor(object):
 
                 if duration_obs > 0.0:
                     if self._prev_stamp_obs.is_zero():
-                        self._graph.reset_data(0.0, _trans_at)
-                        self._graph.update(0.0, _trans_at)
+                        self._graph.reset_data(0.0, _trans_at, self._curr_obs_dist)
+                        self._graph.update(0.0, _trans_at, self._curr_obs_dist)
                     else:
-                        self._graph.update(duration_obs, _trans_at)
+                        self._graph.update(duration_obs, _trans_at, self._curr_obs_dist)
                 elif duration_obs < 0.0:
-                    self._graph.reset_data(0.0, _trans_at)
-                    self._graph.update(0.0, _trans_at)
+                    self._graph.reset_data(0.0, _trans_at, self._curr_obs_dist)
+                    self._graph.update(0.0, _trans_at, self._curr_obs_dist)
 
                 plt.draw()
 
                 self._prev_stamp_obs = self._curr_stamp_obs
             
-            if self._prev_stamp_trans != self._curr_stamp_trans:
-                self._prev_stamp_trans = self._curr_stamp_trans
 
-            plt.pause(0.05)
+            plt.pause(0.01)
 
 if __name__ == '__main__':
     try:
