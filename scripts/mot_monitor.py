@@ -35,49 +35,64 @@ class MOTGraph():
         title="MOT",
         label=None,
         color="c",
-        marker='-o',
+        marker='.',
         alpha=1.0,
-        ylim=None
+        linewidth=1.0,
+        ylim=None,
+        reset_after_loop=False
     ):
         self.x_tick = x_tick 
         self.length = length
         self.color = color
         self.marker = marker
+        self.linewidth = linewidth
         self.alpha = 1.0
         self.ylim = ylim
         self.label = label
         self.xlabel = xlabel
         self.title = title
         self.line = None
+        self.reset_after_loop = reset_after_loop
 
         # プロット初期化
         self._init_plot()
     
     def _init_plot(self):
         # x[]の初期値。0未満でx_tick刻みのnp.array
-        self.x_vec = np.arange(0, self.length) * self.x_tick \
-                     - self.length * self.x_tick
+        #self.x_vec = np.arange(0, self.length) * self.x_tick \
+        #             - self.length * self.x_tick
+        self.x_vec = np.zeros(self.length)
         self.y_vec = np.zeros(self.length)
         
         plt.ion()
-        fig = plt.figure(figsize=(10,10))
+
+        fig = plt.figure(figsize=(20,10))
         ax = fig.add_subplot(111)
         
         self.line = ax.plot(self.x_vec, self.y_vec, 
                             self.marker, color=self.color, 
+                            ls="-",
+                            linewidth=self.linewidth,
                             alpha=self.alpha)        
 
         if self.ylim is not None:
             plt.ylim(self.ylim[0], self.ylim[1])
+
         plt.xlabel(self.xlabel)
         plt.title(self.title)
         plt.grid()
         plt.show()
         
         self.index = 0
-        self.x_data = -self.x_tick
+        #self.x_data = -self.x_tick
         self.pretime = 0.0
         self.fps = 0.0
+        self._x_min = 0.0
+
+    def reset_data(self, xval=0.0, yval=0.0):
+        self.x_vec[:] = xval
+        self.y_vec[:] = yval
+        self._x_min = min(0, xval)
     
     def update_index(self):
         self.index = self.index + 1 if self.index < self.length-1 else 0
@@ -95,9 +110,9 @@ class MOTGraph():
         self.fps = 1.0 / (time_diff + 1e-16)
         self.pretime = curtime 
         
-    def update(self, y_data):
+    def update(self, x_data, y_data):
         # プロットする配列の更新
-        self.x_data += self.x_tick
+        #self.x_data += self.x_tick
         self.y_vec[self.index] = y_data
         
         y_pos = self.index + 1 if self.index < self.length else 0
@@ -105,9 +120,18 @@ class MOTGraph():
         self.line[0].set_ydata(tmp_y_vec)
         if self.ylim is None:
             self.update_ylim(y_data)
+
+        tmp_x_vec = np.roll(self.x_vec, -1)
+        tmp_x_vec[self.length - 1] = x_data
+
+        self.x_vec = tmp_x_vec - x_data
+        self.line[0].set_xdata(self.x_vec)
+        self._x_min -= x_data
+
+        plt.xlim(self._x_min - self.x_tick, 0)
         
         plt.title(f"fps: {self.fps:0.1f} Hz")
-        plt.pause(0.01)
+        #plt.pause(0.01)
         
         # 次のプロット更新のための処理
         self.update_index()
@@ -116,10 +140,11 @@ class MOTGraph():
 class MOTMonitor(object):
     THRESHOLD_ATTENUATION = math.log(0.02)
 
-    def __init__(self):
+    def __init__(self, fps=4):
         #rospy.init_node('transmittance_monitor', anonymous=True)
         rospy.init_node('mot_monitor')
 
+        self._fps = fps
         self._sensor_name = ""
         self._dist_testpiece = 1000.0
         self._sub_exp = rospy.Subscriber('experimental_setup', ExpSetup,
@@ -131,9 +156,21 @@ class MOTMonitor(object):
         self._sub_obs = rospy.Subscriber('/processing_unit/measurer/obstacle_group', ObstacleGroup,
                                 self._callback_obs)
 
-        _queue_size = 100
+        self._title = "MOT"
+        #self._graph = MOTGraph(1.0/fps, 300*fps)
+        self._graph = MOTGraph(1.0/fps, 30*fps, linewidth=0.5)
 
-        self._prev_stamp = rospy.Time(0)
+        self._prev_stamp_trans = rospy.Time(0)
+        self._curr_stamp_trans = rospy.Time(0)
+        self._prev_stamp_obs = rospy.Time(0)
+        self._curr_stamp_obs = rospy.Time(0)
+
+        self._trans_value = 0.0
+        self._trans_distance = 0.0
+        self._trans_wavelength = 0.0
+        self._n_obstacles = 0
+        self._obstacle_time = 0
+
 
         rospy.loginfo("Initialization: OK")
 
@@ -151,16 +188,18 @@ class MOTMonitor(object):
         self._trans_distance = msg_tns.measurement_distance
         self._trans_wavelength = msg_tns.wavelength
 
-        self._trans_time = msg_tns.header.stamp.to_sec()
-        rospy.loginfo("Time Trans: %.2f", self._trans_time)
+        self._curr_stamp_trans = msg_tns.header.stamp
+        rospy.loginfo("Time Trans: %.2f", self._curr_stamp_trans.to_time())
         return
 
     def _callback_obs(self, msg_obs):
         self._n_obstacles = msg_obs.n_obstacles
-        self._obstacle_time = msg_obs.header.stamp.to_sec()
-        rospy.loginfo("Obstacles: %d at %.2f", self._n_obstacles, self._obstacle_time)
+        self._curr_stamp_obs = msg_obs.header.stamp
+        
+        rospy.loginfo("Obstacles: %d at %.2f",
+                        self._n_obstacles, self._curr_stamp_obs.to_time())
 
-        self.display()
+        #self.display()
 
         return
 
@@ -187,16 +226,38 @@ class MOTMonitor(object):
         return t_at
 
     def display(self):
-        _trans_at = self.calc_transmittance_at(self._trans_distance, 
-                                                self._trans_value,
-                                                self._dist_testpiece)
-        _mor = self.calc_MOR(self._trans_distance, self._trans_value)
+        while not rospy.is_shutdown():
+            if self._prev_stamp_obs != self._curr_stamp_obs:
+                duration_obs = (self._curr_stamp_obs - self._prev_stamp_obs).to_sec()
+                _trans_at = self.calc_transmittance_at(self._trans_distance, 
+                                                    self._trans_value,
+                                                    self._dist_testpiece)
+                _mor = self.calc_MOR(self._trans_distance, self._trans_value)
 
+                if duration_obs > 0.0:
+                    if self._prev_stamp_obs.is_zero():
+                        self._graph.reset_data(0.0, _trans_at)
+                        self._graph.update(0.0, _trans_at)
+                    else:
+                        self._graph.update(duration_obs, _trans_at)
+                elif duration_obs < 0.0:
+                    self._graph.reset_data(0.0, _trans_at)
+                    self._graph.update(0.0, _trans_at)
+
+                plt.draw()
+
+                self._prev_stamp_obs = self._curr_stamp_obs
+            
+            if self._prev_stamp_trans != self._curr_stamp_trans:
+                self._prev_stamp_trans = self._curr_stamp_trans
+
+            plt.pause(0.05)
 
 if __name__ == '__main__':
     try:
-        MOTMonitor()
-        rospy.spin()
+        mot = MOTMonitor()
+        mot.display()
+        #rospy.spin()
     except rospy.ROSInterruptException:
         pass
 
