@@ -67,7 +67,7 @@ class MOTGraph():
 
         plt.ion()
 
-        fig = plt.figure(figsize=(20,10))
+        fig = plt.figure(figsize=(10,6))
         self.ax_t = fig.add_subplot(111)
         self.ax_d = self.ax_t.twinx()
         self.ax_t.grid(True)
@@ -159,7 +159,7 @@ class MOTGraph():
 class MOTMonitor(object):
     THRESHOLD_ATTENUATION = math.log(0.02)
 
-    def __init__(self, fps=4):
+    def __init__(self, fps=4, duration=300):
         #rospy.init_node('transmittance_monitor', anonymous=True)
         rospy.init_node('mot_monitor')
 
@@ -177,7 +177,7 @@ class MOTMonitor(object):
 
         self._title = "MOT"
         #self._graph = MOTGraph(1.0/fps, 300*fps)
-        self._graph = MOTGraph(1.0/fps, 30*fps, ylim=[-0.05, 1.05])
+        self._graph = MOTGraph(1.0/fps, duration*fps, ylim=[-0.05, 1.05])
 
         self._prev_stamp_trans = rospy.Time(0)
         self._curr_stamp_trans = rospy.Time(0)
@@ -192,14 +192,14 @@ class MOTMonitor(object):
 
         self._curr_obs_dist = -1.0
 
-        rospy.loginfo("Initialization: OK")
+        rospy.loginfo("Initialized: fps: %d, duration:%d sec", fps, duration)
 
         return
 
     def _callback_exp(self, msg):
         self._sensor_name = msg.name_sensor
         self._dist_testpiece = msg.dist_testpiece
-        rospy.loginfo("ExpSetup: %s %.1f", self._sensor_name, self._dist_testpiece)
+        rospy.loginfo_once("ExpSetup: %s %.1f", self._sensor_name, self._dist_testpiece)
         self._sub_exp.unregister()
         return
 
@@ -209,7 +209,7 @@ class MOTMonitor(object):
         self._trans_wavelength = msg_tns.wavelength
 
         self._curr_stamp_trans = msg_tns.header.stamp
-        rospy.loginfo("Time Trans: %.2f", self._curr_stamp_trans.to_time())
+        rospy.loginfo_once("Time Trans: %.2f", self._curr_stamp_trans.to_time())
         return
 
     def _callback_obs(self, msg_obs):
@@ -218,8 +218,8 @@ class MOTMonitor(object):
 
         if self._n_obstacles > 0:
             self._curr_obs_dist = self.calc_min_obstacle_distance(msg_obs)
-            rospy.loginfo("Z: %.2f", self._curr_obs_dist)
-        rospy.loginfo("Obstacles: %d at %.2f",
+            rospy.loginfo_once("Z: %.2f", self._curr_obs_dist)
+        rospy.loginfo_once("Obstacles: %d at %.2f",
                         self._n_obstacles, self._curr_stamp_obs.to_time())
 
         #self.display()
@@ -290,7 +290,7 @@ class MOTMonitor(object):
 
 if __name__ == '__main__':
     try:
-        mot = MOTMonitor()
+        mot = MOTMonitor(fps=4, duration=300)
         mot.display()
         #rospy.spin()
     except rospy.ROSInterruptException:

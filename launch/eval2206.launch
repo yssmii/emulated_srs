@@ -28,17 +28,14 @@
     <arg name="save_images_p" value="$(arg save_images_p)" />
   </include>
 
-<!--
-  <node name="transmittance_publisher" pkg="emulated_srs"
-    type="transmittance.py" />
--->    
   <node name="transmittance_monitor" pkg="emulated_srs"
         type="transmittance_monitor.py">
     <param name="sync_delay" value="$(arg sync_delay)" />
   </node>
-  
+
+  <node name="mot_monitor" pkg="emulated_srs"
+    type="mot_monitor.py" />
+
   <node name="mask_maker" pkg="emulated_srs"
     type="mask_maker.py" />
 </launch>
-
- 

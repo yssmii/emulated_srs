@@ -14,11 +14,17 @@
   <arg name="fps" default="4" />
 
   <arg name="record_delay" default="10.0" />
+
+  <arg name="dummy_transmittance_p" default="1" />
   
-  <!--
+  <arg name="record_current_dir_p" default="0" />
+  
+  <group if="$(eval record_current_dir_p" >
     <arg name="dirname_data" default="$(env PWD)/Data" />
-  -->
-  <arg name="dirname_data" default="/media/ysumi/LaCie/Data" />
+  </group>
+  <group unless="$(eval record_current_dir_p" >
+    <arg name="dirname_data" default="/media/ysumi/LaCie/Data" />
+  </group>
 
   <node name="exp_setup" pkg="emulated_srs" type="experimental_setup_broadcaster.py"
     output="screen" cwd="node">
@@ -37,12 +43,14 @@
     <arg name="zkey" value="$(eval 200. + arg('exp_distance'))" />
   </include>
 
-<!--
-  <node name="transmittance_publisher" pkg="emulated_srs"
-    type="transmittance_publisher.py" />
--->    
-  <node name="transmittance_publisher" pkg="emulated_srs"
-    type="dummy_transmissometer.py" />
+  <group unless="$(eval dummy_transmittance_p">
+    <node name="transmittance_publisher" pkg="emulated_srs"
+      type="transmittance_publisher.py" />
+  </group>
+  <group if="$(eval dummy_transmittance_p">
+    <node name="transmittance_publisher" pkg="emulated_srs"
+      type="dummy_transmissometer.py" />
+  </group>
 
   <group if="$(arg record_p)">
     <node name="record_points" pkg="rosbag" type="record" output="screen"

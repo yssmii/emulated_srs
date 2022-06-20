@@ -29,7 +29,6 @@ class DummyTransmissometer(object):
         self._stamp = msg.header.stamp
         rospy.loginfo("Time: %.2f", self._stamp.to_sec())
         self._is_started = True
- 
 
     def _publish(self):
         if self._is_started:
@@ -46,7 +45,7 @@ class DummyTransmissometer(object):
 
 if __name__ == '__main__':
     try:
-        trans = DummyTransmissometer(20)  # 4hz
+        trans = DummyTransmissometer(20)  # 20hz
         
         #rospy.spin()
 
