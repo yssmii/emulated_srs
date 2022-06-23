@@ -44,11 +44,22 @@
 ## transmittance_monitor.py
 
 * Monitor tool that subscribes the topics, _/transmittance_, published from
-  _transmittance_publisher.py_ and displays their spatial transmittances values
+  _transmittance_publisher.py_, and displays their spatial transmittances values
 
 ### Usage
 
     rosrun emulated_srs transmittance_monitor.py
+
+## mot_monitor.py
+
+* Monitor tool that subscribes the topic _/transmittance_,
+  _/processing_unit/measurer/obstacle_group_ and _/experimental_setup_, and
+  displays the time series graphs of the spatial transmittance values at
+  the experimental distance and the average distances of the detected obstacles.
+
+### Usage
+
+    rosrun emulated_srs mot_monitor.py
 
 ## makeMask
 

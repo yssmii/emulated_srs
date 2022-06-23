@@ -4,7 +4,7 @@
     publishes the topics, including PointCloud2, for processing_unit.launch.
 * Optionally, it records the topics into ROSBAG files.
 * This emulates the sensing unit of
-    [the SRS architecture](/doc/SRSArchitecture.png) according to Fig.1 in IEC
+    [the SRS architecture](SRSArchitecture.png) according to Fig.1 in IEC
     TS 62998-1.
 
 ## Usage
@@ -40,19 +40,21 @@
 
 ## Supported sensor nodes
 
-| LABEL     | ROS package                                          |
-| --------- | ---------------------------------------------------- |
-| D435      | https://github.com/IntelRealSense/realsense-ros      |
-| D455      | https://github.com/IntelRealSense/realsense-ros      |
-| L515      | https://github.com/IntelRealSense/realsense-ros      |
-| LIPSDL    | https://github.com/lips-hci/openni2_camera           |
-| Xtion2    | https://github.com/ros-drivers/openni2_camera        |
-| Structure | https://github.com/ros-drivers/openni2_camera        |
-| Kinect    | http://wiki.ros.org/freenect_launch                  |
-| Kinect2   | https://github.com/code-iai/iai_kinect2              |
-| Azure     | https://github.com/microsoft/Azure_Kinect_ROS_Driver |
-| Astra     | https://github.com/orbbec/ros_astra_camera           |
-| Vzense    | https://github.com/Vzense/Vzense_ROS_Plugin_Linux    |
-| ZED       | https://github.com/stereolabs/zed-ros-wrapper        |
-| ZED2      | https://github.com/stereolabs/zed-ros-wrapper        |
-| ZED2i     | https://github.com/stereolabs/zed-ros-wrapper        |
+| LABEL     | ROS package                                                       |
+| --------- | ----------------------------------------------------------------- |
+| D435      | https://github.com/IntelRealSense/realsense-ros                   |
+| D455      | https://github.com/IntelRealSense/realsense-ros                   |
+| L515      | https://github.com/IntelRealSense/realsense-ros                   |
+| LIPSDL    | https://github.com/lips-hci/openni2_camera                        |
+| Xtion2    | https://github.com/ros-drivers/openni2_camera ([SDK][1] required) |
+| Structure | https://github.com/ros-drivers/openni2_camera                     |
+| Kinect    | http://wiki.ros.org/freenect_launch                               |
+| Kinect2   | https://github.com/code-iai/iai_kinect2                           |
+| Azure     | https://github.com/microsoft/Azure_Kinect_ROS_Driver              |
+| Astra     | https://github.com/orbbec/ros_astra_camera                        |
+| Vzense    | https://github.com/Vzense/Vzense_ROS_Plugin_Linux                 |
+| ZED       | https://github.com/stereolabs/zed-ros-wrapper                     |
+| ZED2      | https://github.com/stereolabs/zed-ros-wrapper                     |
+| ZED2i     | https://github.com/stereolabs/zed-ros-wrapper                     |
+
+[1]: https://dlcdnets.asus.com/pub/ASUS/Multimedia/Xtion_2/ASUS-Linux-x64-OpenNI2.2.tar.gz

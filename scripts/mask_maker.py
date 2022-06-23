@@ -7,7 +7,7 @@
 
 @author Yasushi SUMI <y.sumi@aist.go.jp>
 
-Copyright (C) 2021 AIST
+Copyright (C) 2022 AIST
 Released under the MIT license
 https://opensource.org/licenses/mit-license.php
 """

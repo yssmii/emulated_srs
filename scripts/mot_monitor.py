@@ -7,7 +7,7 @@
 
 @author Yasushi SUMI <y.sumi@aist.go.jp>
 
-Copyright (C) 2021 AIST
+Copyright (C) 2022 AIST
 Released under the MIT license
 https://opensource.org/licenses/mit-license.php
 """
@@ -100,6 +100,9 @@ class MOTGraph():
         self.fps = 0.0
         self._x_min = 0.0
 
+    def set_dist_testpiece(self, dist):
+        self.ax_t.set_ylabel(f"Transmittance at {dist}")
+
     def reset_data(self, xval, yval_t, yval_d):
         self.x_vec[:] = xval
         self.y_vec_t[:] = yval_t
@@ -166,6 +169,11 @@ class MOTMonitor(object):
         self._fps = fps
         self._sensor_name = ""
         self._dist_testpiece = 1000.0
+        
+        self._title = "MOT"
+        #self._graph = MOTGraph(1.0/fps, 300*fps)
+        self._graph = MOTGraph(1.0/fps, duration*fps, ylim=[-0.05, 1.05])
+
         self._sub_exp = rospy.Subscriber('experimental_setup', ExpSetup,
                                 self._callback_exp)
         
@@ -174,10 +182,6 @@ class MOTMonitor(object):
 
         self._sub_obs = rospy.Subscriber('/processing_unit/measurer/obstacle_group', ObstacleGroup,
                                 self._callback_obs)
-
-        self._title = "MOT"
-        #self._graph = MOTGraph(1.0/fps, 300*fps)
-        self._graph = MOTGraph(1.0/fps, duration*fps, ylim=[-0.05, 1.05])
 
         self._prev_stamp_trans = rospy.Time(0)
         self._curr_stamp_trans = rospy.Time(0)
@@ -199,6 +203,7 @@ class MOTMonitor(object):
     def _callback_exp(self, msg):
         self._sensor_name = msg.name_sensor
         self._dist_testpiece = msg.dist_testpiece
+        self._graph.set_dist_testpiece(self._dist_testpiece)
         rospy.loginfo_once("ExpSetup: %s %.1f", self._sensor_name, self._dist_testpiece)
         self._sub_exp.unregister()
         return

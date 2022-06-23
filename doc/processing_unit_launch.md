@@ -1,10 +1,10 @@
 # processing_unit.launch
 
 * _processing_unit.launch_ initiates the _obstacle_measurer_ node with parameter
-    settings to subscribe to PointCloud2 topics published from
+    settings to subscribe to the PointCloud2 topics published from
     _sensing_unit.launch_.
 * This emulates the processing unit of
-    [the SRS architecture](/doc/SRSArchitecture.png) according to Fig.1 in IEC
+    [the SRS architecture](SRSArchitecture.png) according to Fig.1 in IEC
     TS 62998-1.
 
 ## Usage
