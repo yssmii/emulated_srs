@@ -101,7 +101,8 @@ class MOTGraph():
         self._x_min = 0.0
 
     def set_dist_testpiece(self, dist):
-        self.ax_t.set_ylabel(f"Transmittance at {dist}")
+        #self.ax_t.set_ylabel(f"Transmittance at {dist}")
+        self.ax_t.set_ylabel("Transmittance at " + str(dist))
 
     def reset_data(self, xval, yval_t, yval_d):
         self.x_vec[:] = xval
@@ -152,7 +153,8 @@ class MOTGraph():
 
         plt.xlim(self._x_min - self.x_tick, 0)
 
-        plt.title(f"fps: {self.fps:0.1f} Hz")
+        #plt.title(f"fps: {self.fps:0.1f} Hz")
+        plt.title("fps: " + '{:.1f}'.format(self.fps) + " Hz")
         #plt.pause(0.01)
         
         # 次のプロット更新のための処理

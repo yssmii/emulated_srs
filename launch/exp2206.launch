@@ -19,10 +19,10 @@
   
   <arg name="record_current_dir_p" default="0" />
   
-  <group if="$(eval record_current_dir_p" >
+  <group if="$(eval record_current_dir_p)" >
     <arg name="dirname_data" default="$(env PWD)/Data" />
   </group>
-  <group unless="$(eval record_current_dir_p" >
+  <group unless="$(eval record_current_dir_p)" >
     <arg name="dirname_data" default="/media/ysumi/LaCie/Data" />
   </group>
 
@@ -43,11 +43,11 @@
     <arg name="zkey" value="$(eval 200. + arg('exp_distance'))" />
   </include>
 
-  <group unless="$(eval dummy_transmittance_p">
+  <group unless="$(eval dummy_transmittance_p)">
     <node name="transmittance_publisher" pkg="emulated_srs"
       type="transmittance_publisher.py" />
   </group>
-  <group if="$(eval dummy_transmittance_p">
+  <group if="$(eval dummy_transmittance_p)">
     <node name="transmittance_publisher" pkg="emulated_srs"
       type="dummy_transmissometer.py" />
   </group>
