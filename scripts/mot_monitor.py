@@ -18,6 +18,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 import time
+import sys
 
 from emulated_srs.msg import Transmittance
 from emulated_srs.msg import ExpSetup
@@ -73,6 +74,8 @@ class MOTGraph():
         self.ax_t.grid(True)
         self.ax_d.grid(False)
 
+        fig.canvas.mpl_connect('key_press_event', self.press)
+
         self.line_t = self.ax_t.plot(self.x_vec, self.y_vec_t, 
                             self.marker, color=self.color, 
                             ls="-",
@@ -100,6 +103,17 @@ class MOTGraph():
         self.fps = 0.0
         self._x_min = 0.0
 
+        self.graph_update_p = True
+
+    def toggle_update_onoff(self):
+        self.graph_update_p = not self.graph_update_p
+
+    def press(self, event):
+        rospy.loginfo('Press: ' + event.key)
+        sys.stdout.flush()
+        if event.key == ' ':
+            self.toggle_update_onoff()
+
     def set_dist_testpiece(self, dist):
         #self.ax_t.set_ylabel(f"Transmittance at {dist}")
         self.ax_t.set_ylabel("Transmittance at " + str(dist))
@@ -109,7 +123,7 @@ class MOTGraph():
         self.y_vec_t[:] = yval_t
         self.y_vec_d[:] = yval_d
         self._x_min = min(0, xval)
-    
+            
     def update_index(self):
         self.index = self.index + 1 if self.index < self.length-1 else 0
         
@@ -133,12 +147,8 @@ class MOTGraph():
         self.y_vec_d[self.index] = y_data_d
         
         y_pos = self.index + 1 if self.index < self.length else 0
-
         tmp_y_vec_t = np.r_[self.y_vec_t[y_pos:self.length], self.y_vec_t[0:y_pos]]
-        self.line_t[0].set_ydata(tmp_y_vec_t)
-
         tmp_y_vec_d = np.r_[self.y_vec_d[y_pos:self.length], self.y_vec_d[0:y_pos]]
-        self.line_d[0].set_ydata(tmp_y_vec_d)
 
         if self.ylim is None:
             self.update_ylim(y_data_t)
@@ -147,15 +157,20 @@ class MOTGraph():
         tmp_x_vec[self.length - 1] = x_data
 
         self.x_vec = tmp_x_vec - x_data
-        self.line_t[0].set_xdata(self.x_vec)
-        self.line_d[0].set_xdata(self.x_vec)
         self._x_min -= x_data
+        
+        if self.graph_update_p:
+            self.line_t[0].set_ydata(tmp_y_vec_t)
+            self.line_d[0].set_ydata(tmp_y_vec_d)
+            self.line_t[0].set_xdata(self.x_vec)
+            self.line_d[0].set_xdata(self.x_vec)
 
-        plt.xlim(self._x_min - self.x_tick, 0)
+            plt.xlim(self._x_min - self.x_tick, 0)
 
-        #plt.title(f"fps: {self.fps:0.1f} Hz")
-        plt.title("fps: " + '{:.1f}'.format(self.fps) + " Hz")
-        #plt.pause(0.01)
+            #plt.title(f"fps: {self.fps:0.1f} Hz")
+            plt.title("fps: " + '{:.1f}'.format(self.fps) + " Hz")
+
+        plt.pause(0.01)
         
         # 次のプロット更新のための処理
         self.update_index()
@@ -282,18 +297,15 @@ class MOTMonitor(object):
                     if self._prev_stamp_obs.is_zero():
                         self._graph.reset_data(0.0, _trans_at, self._curr_obs_dist)
                         self._graph.update(0.0, _trans_at, self._curr_obs_dist)
+                        rospy.loginfo('Graph initialized')
                     else:
                         self._graph.update(duration_obs, _trans_at, self._curr_obs_dist)
                 elif duration_obs < 0.0:
                     self._graph.reset_data(0.0, _trans_at, self._curr_obs_dist)
                     self._graph.update(0.0, _trans_at, self._curr_obs_dist)
-
-                plt.draw()
+                    rospy.loginfo('Graph reset due to data loop')
 
                 self._prev_stamp_obs = self._curr_stamp_obs
-            
-
-            plt.pause(0.01)
 
 if __name__ == '__main__':
     try:
