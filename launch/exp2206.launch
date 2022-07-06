@@ -17,14 +17,7 @@
 
   <arg name="dummy_transmittance_p" default="1" />
   
-  <arg name="record_current_dir_p" default="0" />
-  
-  <group if="$(eval record_current_dir_p)" >
-    <arg name="dirname_data" default="$(env PWD)/Data" />
-  </group>
-  <group unless="$(eval record_current_dir_p)" >
-    <arg name="dirname_data" default="/media/ysumi/LaCie/Data" />
-  </group>
+  <arg name="dirname_data" default="/media/ysumi/LaCie/Data" />
 
   <node name="exp_setup" pkg="emulated_srs" type="experimental_setup_broadcaster.py"
     output="screen" cwd="node">

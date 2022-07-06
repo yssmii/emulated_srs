@@ -116,7 +116,7 @@ class MOTGraph():
 
     def set_dist_testpiece(self, dist):
         #self.ax_t.set_ylabel(f"Transmittance at {dist}")
-        self.ax_t.set_ylabel("Transmittance at " + str(dist))
+        self.ax_t.set_ylabel("Transmittance @ " + str(dist))
 
     def reset_data(self, xval, yval_t, yval_d):
         self.x_vec[:] = xval
