@@ -34,6 +34,7 @@
   <include file="$(find emulated_srs)/launch/processing_unit.launch">
     <!-- for display -->
     <arg name="zkey" value="$(eval 200. + arg('exp_distance'))" />
+    <arg name="min_pixels_as_object" value="200" />
   </include>
 
   <group unless="$(eval dummy_transmittance_p)">
@@ -50,6 +51,7 @@
           args="-o $(arg dirname_data)/$(arg sensor_name)
                 --split --size=4000
                 /sensing_unit/camera/depth_registered/points_throttle
+                /sensing_unit/kinect2/qhd/image_color_rect_throttle
                 /experimental_setup
                 /transmittance
                 /tf /tf_static"

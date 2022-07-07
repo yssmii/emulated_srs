@@ -154,6 +154,12 @@
                   $(arg throttle_fps)" />
     </group>
 
+    <group if="$(arg throttle_p)">
+      <node name="ithrottle" pkg="topic_tools" type="throttle"
+            args="messages /sensing_unit/kinect2/qhd/image_color_rect
+                  $(arg throttle_fps)" />
+    </group>
+
 <!--
     <group if="$(arg record_p)">
       <node name="record_points" pkg="rosbag" type="record" output="screen"
