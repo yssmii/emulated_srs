@@ -50,8 +50,8 @@
     <node name="record_points" pkg="rosbag" type="record" output="screen"
           args="-o $(arg dirname_data)/$(arg sensor_name)
                 --split --size=4000
-                /sensing_unit/camera/depth_registered/points_throttle
-                /sensing_unit/kinect2/qhd/image_color_rect_throttle
+                /sensing_unit/depth_registered/points_throttle
+                /sensing_unit/rgb/image_rect_color_throttle
                 /experimental_setup
                 /transmittance
                 /tf /tf_static"

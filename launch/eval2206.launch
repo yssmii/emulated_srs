@@ -1,7 +1,7 @@
 <launch>
   <arg name="zkey" default="3200.0" />
   <arg name="min_gap_of_occluding_boundary" default="50.0" />
-  <arg name="min_pixels_as_object" default="500" />
+  <arg name="min_pixels_as_object" default="200" />
   <arg name="min_overlap_rate" default="0.8" />
   
   <arg name="use_mask_p" default="0" />
@@ -10,7 +10,7 @@
   <arg name="dirname_log" default="$(env PWD)/Data/" />
 
   <arg name="filename_mask" default="MASK.png" />
-  <arg name="intopic" default="/sensing_unit/camera/depth_registered/points_throttle" />
+  <arg name="intopic" default="/sensing_unit/depth_registered/points_throttle" />
 
   <arg name="sync_delay" default="0.5" />
 

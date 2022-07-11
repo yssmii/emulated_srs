@@ -11,7 +11,7 @@ from emulated_srs.msg import Transmittance
 class DummyTransmissometer(object):
     def __init__(self, r):
         rospy.init_node('dummy_transmissometer')
-        rospy.Subscriber('/sensing_unit/camera/depth_registered/points_throttle',
+        rospy.Subscriber('/sensing_unit/depth_registered/points_throttle',
             PointCloud2, self._callback)
         self._pub = rospy.Publisher('transmittance', Transmittance, queue_size=10)
         self._rate = rospy.Rate(r)
