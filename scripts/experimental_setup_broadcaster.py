@@ -31,7 +31,7 @@ def broadcaster():
         rospy.logerr("value not set")
         #rospy.signal_shutdown("value not set")
     
-    if(tdist<0.0):
+    if(tdist<10.0):
         rospy.logerr("invalid distance %f" % tdist)
         rospy.signal_shutdown("invalid distance %f" % tdist)
 

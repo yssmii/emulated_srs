@@ -7,7 +7,7 @@
             Astra|Vzense|ZED|ZED2|ZED2i"
        />
 
-  <arg name="exp_distance" default="-1000.0" />
+  <arg name="exp_distance" default="1" /> <!-- invalid val. must be more than 10 -->
 
   <arg name="record_p" default="0" />
 
@@ -48,7 +48,7 @@
 
   <group if="$(arg record_p)">
     <node name="record_points" pkg="rosbag" type="record" output="screen"
-          args="-o $(arg dirname_data)/$(arg sensor_name)
+          args="-o $(arg dirname_data)/$(arg sensor_name)_$(arg exp_distance)
                 --split --size=4000
                 /sensing_unit/depth_registered/points_throttle
                 /sensing_unit/rgb/image_rect_color_throttle

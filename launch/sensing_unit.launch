@@ -111,15 +111,55 @@
     </group>
 
     <group if="$(eval sensor_name=='Kinect2')">
+<!-- 
+          <remap from="/sensing_unit/kinect2/sd"
+             to="/sensing_unit/depth_registered" /> 
+
       <remap from="/sensing_unit/kinect2/qhd/image_depth_rect"
-              to="/sensing_unit/depth_registered/image_rect" /> 
+      to="/sensing_unit/depth_registered/image_rect" /> 
       <remap from="/sensing_unit/kinect2/qhd/camera_info"
               to="/sensing_unit/rgb/camera_info" />
+ 
       <remap from="/sensing_unit/kinect2/qhd/image_color_rect"
               to="/sensing_unit/rgb/image_rect_color" />
 
-      <remap from="/sensing_unit/kinect2/sd/points"
-              to="/sensing_unit/depth_registered/points" />
+              <remap from="/sensing_unit/kinect2/sd/points"
+        to="/sensing_unit/depth_registered/points" />
+
+        <remap from="/sensing_unit/kinect2/qhd/image_color_rect"
+        to="/sensing_unit/rgb/image_rect_color" />
+        <remap from="/sensing_unit/kinect2/qhd/camera_info"
+        to="/sensing_unit/rgb/camera_info" />
+
+
+        <remap from="/sensing_unit/kinect2/sd/camera_info"
+        to="/sensing_unit/depth_registered/camera_info" />
+
+        <remap from="/sensing_unit/kinect2/sd/image_color_rect"
+        to="/sensing_unit/depth_registered/image_color_rect" />
+        <remap from="/sensing_unit/kinect2/sd/image_depth"
+        to="/sensing_unit/depth_registered/image_depth" />
+        <remap from="/sensing_unit/kinect2/sd/image_depth_rect"
+        to="/sensing_unit/depth_registered/image_depth_rect" />
+        <remap from="/sensing_unit/kinect2/sd/image_ir"
+        to="/sensing_unit/depth_registered/image_ir" />                
+        <remap from="/sensing_unit/kinect2/sd/image_ir_rect"
+        to="/sensing_unit/depth_registered/image_ir_rect" />      
+
+        <remap from="/sensing_unit/kinect2/sd/image_color_rect/compressed"
+        to="/sensing_unit/depth_registered/image_color_rect/compressed" />
+        <remap from="/sensing_unit/kinect2/sd/image_depth/compressed"
+        to="/sensing_unit/depth_registered/image_depth/compressed" />
+        <remap from="/sensing_unit/kinect2/sd/image_depth_rect/compressed"
+        to="/sensing_unit/depth_registered/image_depth_rect/compressed" />
+        <remap from="/sensing_unit/kinect2/sd/image_ir/compressed"
+        to="/sensing_unit/depth_registered/image_ir/compressed" />                
+        <remap from="/sensing_unit/kinect2/sd/image_ir_rect/compressed"
+        to="/sensing_unit/depth_registered/image_ir_rect/compressed" />                
+-->                          
+        <remap from="/sensing_unit/kinect2/sd/points"
+        to="/sensing_unit/camera/depth_registered/points" />
+            
 
       <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch">
         <arg name="publish_tf" value="true" />
@@ -285,14 +325,14 @@
             args="messages /sensing_unit/depth_registered/points
                   $(arg throttle_fps)" />
     </group>
-
+<!-- 
     <group if="$(arg throttle_p)">
       <node name="ithrottle" pkg="topic_tools" type="throttle"
             args="messages /sensing_unit/rgb/image_rect_color
                   $(arg throttle_fps)">
       </node>
     </group>
-
+-->
 <!--
     <group if="$(arg record_p)">
       <node name="record_points" pkg="rosbag" type="record" output="screen"
