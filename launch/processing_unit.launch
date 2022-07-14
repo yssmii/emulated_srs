@@ -21,25 +21,20 @@
 
   <arg name="filename_mask" default="MASK.png" />
   <!-- <arg name="filename_region" default="Reg.png" /> -->
-  <arg name="intopic" default="/sensing_unit/depth_registered/points_throttle" />
+  <arg name="intopic" default="/sensing_unit/camera/depth_registered/points_throttle" />
   
   <group ns="processing_unit">
-    <remap from="/camera/depth_registered/points"
-           to="$(arg intopic)" />
+    <remap from="/camera/depth_registered/points" to="$(arg intopic)" />
 
-    <node name="measurer" pkg="emulated_srs" type="obstacle_measurer"
-	  output="screen" cwd="node">
+    <node name="measurer" pkg="emulated_srs" type="obstacle_measurer" output="screen" cwd="node">
       
       <!-- <param name="sensor_name" value="$(arg sensor_name)" /> -->
-
       <!-- <param name="dist_testpiece" value="$(arg exp_distance)" /> -->
-
       <param name="use_mask_p" value="$(arg use_mask_p)" />
       <!-- <param name="use_region_p" value="$(arg use_region_p)" /> -->
-      
+
       <param name="zkey" value="$(arg zkey)" />
-      <param name="min_gap_of_occluding_boundary"
-	     value="$(arg min_gap_of_occluding_boundary)" />
+      <param name="min_gap_of_occluding_boundary" value="$(arg min_gap_of_occluding_boundary)" />
       <param name="min_pixels_as_object" value="$(arg min_pixels_as_object)" />
       <param name="min_overlap_rate" value="$(arg min_overlap_rate)" />
 

@@ -10,7 +10,7 @@
   <arg name="dirname_log" default="$(env PWD)/Data/" />
 
   <arg name="filename_mask" default="MASK.png" />
-  <arg name="intopic" default="/sensing_unit/depth_registered/points_throttle" />
+  <arg name="intopic" default="/sensing_unit/camera/depth_registered/points_throttle" />
 
   <arg name="sync_delay" default="0.5" />
 

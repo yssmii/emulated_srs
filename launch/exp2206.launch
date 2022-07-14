@@ -1,11 +1,11 @@
 <launch>
   <arg name="sensor_name"
-       default="Astra"
-       doc="D435|D455|L515|LIPSDL|&#x0A;
+      default="Astra"
+      doc="D435|D455|L515|LIPSDL|&#x0A;
             Xtion2|&#x0A;
             Structure|Kinect|Kinect2|Azure|&#x0A;
             Astra|Vzense|ZED|ZED2|ZED2i"
-       />
+      />
 
   <arg name="exp_distance" default="1" /> <!-- invalid val. must be more than 10 -->
 
@@ -50,8 +50,8 @@
     <node name="record_points" pkg="rosbag" type="record" output="screen"
           args="-o $(arg dirname_data)/$(arg sensor_name)_$(arg exp_distance)
                 --split --size=4000
-                /sensing_unit/depth_registered/points_throttle
-                /sensing_unit/rgb/image_rect_color_throttle
+                /sensing_unit/camera/depth_registered/points_throttle
+                /sensing_unit/camera/rgb/image_rect_color_throttle
                 /experimental_setup
                 /transmittance
                 /tf /tf_static"
@@ -61,4 +61,3 @@
   
 </launch>
 
- 
