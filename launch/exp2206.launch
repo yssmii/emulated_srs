@@ -1,0 +1,63 @@
+<launch>
+  <arg name="sensor_name"
+      default="Astra"
+      doc="D435|D455|L515|LIPSDL|&#x0A;
+            Xtion2|&#x0A;
+            Structure|Kinect|Kinect2|Azure|&#x0A;
+            Astra|Vzense|ZED|ZED2|ZED2i"
+      />
+
+  <arg name="exp_distance" default="1" /> <!-- invalid val. must be more than 10 -->
+
+  <arg name="record_p" default="0" />
+
+  <arg name="fps" default="4" />
+
+  <arg name="record_delay" default="10.0" />
+
+  <arg name="dummy_transmittance_p" default="1" />
+  
+  <arg name="dirname_data" default="/media/ysumi/LaCie/Data" />
+
+  <node name="exp_setup" pkg="emulated_srs" type="experimental_setup_broadcaster.py"
+    output="screen" cwd="node">
+    <param name="sensor_name" value="$(arg sensor_name)" />
+    <param name="dist_testpiece" value="$(arg exp_distance)" />
+  </node>
+
+  <include file="$(find emulated_srs)/launch/sensing_unit.launch">
+    <arg name="sensor_name" value="$(arg sensor_name)" />
+    <arg name="throttle_p" value="1" />
+    <arg name="throttle_fps" value="$(arg fps)" />
+  </include>
+
+  <include file="$(find emulated_srs)/launch/processing_unit.launch">
+    <!-- for display -->
+    <arg name="zkey" value="$(eval 200. + arg('exp_distance'))" />
+    <arg name="min_pixels_as_object" value="200" />
+  </include>
+
+  <group unless="$(eval dummy_transmittance_p)">
+    <node name="transmittance_publisher" pkg="emulated_srs"
+      type="transmittance_publisher.py" />
+  </group>
+  <group if="$(eval dummy_transmittance_p)">
+    <node name="transmittance_publisher" pkg="emulated_srs"
+      type="dummy_transmissometer.py" />
+  </group>
+
+  <group if="$(arg record_p)">
+    <node name="record_points" pkg="rosbag" type="record" output="screen"
+          args="-o $(arg dirname_data)/$(arg sensor_name)_$(arg exp_distance)
+                --split --size=4000
+                /sensing_unit/camera/depth_registered/points_throttle
+                /sensing_unit/camera/rgb/image_rect_color_throttle
+                /experimental_setup
+                /transmittance
+                /tf /tf_static"
+          launch-prefix="bash -c 'sleep $(arg record_delay); $0 $@' ">
+    </node>
+  </group>
+  
+</launch>
+

@@ -26,6 +26,8 @@
 #include <eSRS/ClassificationMap.h>
 
 #include <emulated_srs/Obstacle.h>
+#include <emulated_srs/SetMask.h>
+#include <emulated_srs/ExpSetup.h>
 
 #include "intensity_map.h"
 
@@ -75,9 +77,14 @@ protected:
                              const int height,
                              const int point_step);
 
-  virtual void displayAll(void);
+  virtual void setBasenameToSaveImages(void);
 
-  virtual void publishExpSetup(void);
+  virtual void prepareDisplayAndPublish(void);
+
+  virtual void displayAll(void);
+  virtual void saveAll(void);
+
+  //virtual void publishExpSetup(void);
   
   //!障害物検知結果をpublishする
   virtual int publishObstaclesMessage(
@@ -107,6 +114,8 @@ private:
   //!点群データをサブスクライブした際に呼び出されるコールバック関数
   void pc2Callback(
     const sensor_msgs::PointCloud2ConstPtr &pc2);
+  void setupCallback(
+    const emulated_srs::ExpSetup &msg);
 
   //!点群データを2次元のマップデータに変換する
   bool convertPC2ToMapData(
@@ -134,6 +143,8 @@ private:
 
   void maskMap(void);
 
+  bool setMask(emulated_srs::SetMask::Request &req,
+                emulated_srs::SetMask::Response &res);
 
 public:
   std::string getLocalTimeString(ros::Time &rostime) const;
@@ -141,6 +152,7 @@ public:
 protected:
   //! param for the name of topic to subscribe to
   std::string param_name_topic_;
+  std::string param_name_setup_;
   
   //! true, if the subscribed PC2 has RGB information, 
   bool has_rgb_data_;
@@ -156,6 +168,7 @@ protected:
 
   //! depth and RGB image data for displaying
   UFV::ImageData<unsigned char> map_for_showing_depth_data_;
+  UFV::ImageData<unsigned char> map_for_showing_depth_data_labeled_;
   UFV::ImageData<unsigned char> map_for_showing_rgb_data_;
 
   //! parameters for the obstacle detection
@@ -176,6 +189,9 @@ protected:
   std::string param_dname_log_;
   //std::string param_fname_region_;
 
+  std::string setup_name_sensor_;
+  float setup_dist_testpiece_;
+
   //! set true after the 1st subscription of PC2
   bool flg_initialized_p_;
 
@@ -188,20 +204,25 @@ protected:
 private:
   //! ROS subscriber
   ros::Subscriber subscriber_;
+  ros::Subscriber subscriber_setup_;
+
+  //! ROS service server
+  ros::ServiceServer service_set_mask_;
 
   //! ROS publishers
   ros::Publisher publisher_marker_;
   image_transport::Publisher publisher_image_depth_;
+  image_transport::Publisher publisher_image_depth_labeled_;
   image_transport::Publisher publisher_image_rgb_;
 
 protected:
   ros::Publisher publisher_obstacle_;
-  ros::Publisher publisher_exp_setup_; // experiment setup
+  //ros::Publisher publisher_exp_setup_; // experiment setup
 
-private:
   //! header of subscribed PC2
   std_msgs::Header header_pointcloud2_;
 
+private:
   //! timestamp when publishing obstacle data
   ros::Time timestamp_detection_result_published_;
 

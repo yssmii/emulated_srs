@@ -32,3 +32,6 @@
 *.app
 config.h
 build/
+
+# config files
+.vscode/

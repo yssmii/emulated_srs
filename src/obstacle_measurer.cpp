@@ -16,6 +16,7 @@
 #include <ros/ros.h>
 
 #include <emulated_srs/Obstacle.h>
+#include <emulated_srs/ObstacleGroup.h>
 #include <emulated_srs/ExpSetup.h>
 
 #include "obstacle_measurer.h"
@@ -37,15 +38,15 @@ int main(int argc, char** argv)
 emulated_srs::ObstacleMeasurer::ObstacleMeasurer(void)
     :
     emulated_srs::ObstacleDetector(),
-    param_dist_testpiece_(1500.0),
+    //param_dist_testpiece_(1500.0),
     param_use_correct_region_p_(0),
     param_fname_correct_region_("Reg.png")
 {
-  node_handle_.getParam("dist_testpiece", param_dist_testpiece_);
+  //node_handle_.getParam("dist_testpiece", param_dist_testpiece_);
   node_handle_.getParam("use_region_p", param_use_correct_region_p_);
   node_handle_.getParam("filename_region", param_fname_correct_region_);
 
-  ROS_INFO("dist_testpiece: %f", param_dist_testpiece_);
+  //ROS_INFO("dist_testpiece: %f", param_dist_testpiece_);
   ROS_INFO("use_region_p: %d", param_use_correct_region_p_);
   ROS_INFO("filename_region: %s", param_fname_correct_region_.c_str());
 }
@@ -76,6 +77,7 @@ void emulated_srs::ObstacleMeasurer::initializeMap(
   return;
 }
 
+/*
 void emulated_srs::ObstacleMeasurer::publishExpSetup(void)
 {
   // publish the experimental setup as a latch topic
@@ -95,7 +97,7 @@ void emulated_srs::ObstacleMeasurer::publishExpSetup(void)
 
   return;
 }
-
+*/
 
 void
 emulated_srs::ObstacleMeasurer::setMeasurableInfo(
@@ -146,23 +148,44 @@ int emulated_srs::ObstacleMeasurer::publishObstaclesMessage(
   const std::vector<eSRS::ObstacleClassified> &obstacle_classified,
   const int object_count)
 {
-  std::vector<emulated_srs::Obstacle> obsmsgary;
+ // std::vector<emulated_srs::Obstacle> obsmsgary;
+  emulated_srs::ObstacleGroup og;
 
-  this->emulated_srs::ObstacleDetector::setObstaclesMessage(obstacle_classified, object_count, obsmsgary);
+  //this->emulated_srs::ObstacleDetector::setObstaclesMessage(obstacle_classified, object_count, obsmsgary);
+  this->emulated_srs::ObstacleDetector::setObstaclesMessage(obstacle_classified, object_count, og.data);
 
   if(param_use_correct_region_p_ && (object_count > 0))
   {
-    setMeasurableInfo(object_count, obsmsgary);
+    //setMeasurableInfo(object_count, obsmsgary);
+    setMeasurableInfo(object_count, og.data);
   }
 
+  og.header = header_pointcloud2_;
+  og.header.seq = 0;
+  og.n_obstacles = object_count;
+
+  publisher_obstacle_.publish(og);
+
+  /*
   //! if object_count==0, publish an  empty obstacle
   publisher_obstacle_.publish(obsmsgary[0]);
   for(int i = 1; i < object_count; i++)
   {
     publisher_obstacle_.publish(obsmsgary[i]);
   }
+  */
 
+  
   return UFV::OK;
+}
+
+void emulated_srs::ObstacleMeasurer::setBasenameToSaveImages(void)
+{
+  int tdist = setup_dist_testpiece_;
+  basename_to_save_images_ = setup_name_sensor_ + "_"
+                            + std::to_string(tdist) + "_"
+                            + getLocalTimeString(header_pointcloud2_.stamp) + ".png";
+  return;
 }
 
 void emulated_srs::ObstacleMeasurer::displayAll(void)
